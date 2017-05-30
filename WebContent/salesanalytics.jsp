@@ -111,6 +111,7 @@ con.close();
 	
 	<input type="submit" value="next 20" name="action" />
 	<input type="submit" value="reset" name="action" />
+	<input type="submit" value="next 10 products" name="action" />
 </form>
 
 
@@ -141,14 +142,14 @@ con.close();
 	%>
 	
 	<tr>
-	<td>XXX</td>
+	<td> </td>
 	
 <%
 	//setting up the column headers
 	
 	for (int i = 0; i < col_vals.size(); i++){
 		%>
-		<td><%=col_vals.get(i) %></td>
+		<td><b><%=col_vals.get(i) %></td>
 		<%	
 		
 	}
@@ -177,7 +178,7 @@ con.close();
 		
 			
 		%>
-		<td><%=user+" ("+Integer.toString(totalSales.get(user))+")" %></td>
+		<td><b> <%=user+" ("+Integer.toString(totalSales.get(user))+")" %></b></td>
 		<% 
 
 		

@@ -66,26 +66,9 @@ public class SalesAnalyticsController extends HttpServlet {
 
 	    
 	}
-    class Sort implements Comparator
-    {
 
-
-		@Override
-		public int compare(Object o1, Object o2) {
-			// TODO Auto-generated method stub
-			MyPair x = (MyPair) o1;
-			MyPair y = (MyPair) o2;
-			
-	        int a = x.value;
-	        int b = y.value;
-
-	        return a-b;
-		}
-
-    }
     
     public void bubbleSort(MyPair[] arr) {
-    	System.out.println("entering bubbleeeee sort");
     	int n = arr.length;  
         MyPair temp;  
          for(int i=0; i < n; i++){  
@@ -95,11 +78,9 @@ public class SalesAnalyticsController extends HttpServlet {
                                  temp = arr[j-1];  
                                  arr[j-1] = arr[j];  
                                  arr[j] = temp;  
-                         }  
-                          
+                         }                 
                  }  
          }
-        System.out.println("exiting bubble sort");
     }
 	
 	
@@ -143,9 +124,7 @@ public class SalesAnalyticsController extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 * 
 	 */
-	
-	
-	
+
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
 		//doGet(request, response);
@@ -157,11 +136,6 @@ public class SalesAnalyticsController extends HttpServlet {
 		String row_option = request.getParameter("row");
 		String order_option = request.getParameter("order");
 		String sales_filter_option = request.getParameter("filter");
-		
-		Map <String, Integer> totalsales = new HashMap <>(); //maps user/state to total purchases
-
-		
-		
 		String action = request.getParameter("action");
 
 		ResultSet rs = null;
@@ -218,67 +192,83 @@ public class SalesAnalyticsController extends HttpServlet {
 							
 										"on product.id = newtable.prod_id "+
 										"group by product.id ");
+		
+		pstmt = conn.prepareStatement("select * from person p, role r where p.role_id = r.id "+
+													"and r.role_name = 'Customer' order by p.person_name "+
+					  								"limit 20 offset (20*?) ");
+		pstmt2 = conn.prepareStatement("select * from state limit 20 offset (20*?)");
+		
+		//setting up the data structures
+		List<String> col_vals = new ArrayList<String>();
+		List<String> row_vals = new ArrayList<String>();
+		HashMap<Integer, String> product_mapping = new HashMap<>();
+		Map <String, Integer> totalsales = new HashMap <>(); //maps user/state to total purchases
+		HashMap <String, Integer> grandTotal = new HashMap<>();		
+		//maps customer_name to hashmap
+		HashMap< String, Map <String,Integer>> totalsales_per_rowval = new HashMap<>();
 
 		if (action.equalsIgnoreCase("reset")){
 			session.setAttribute("firsttime", true);
 		}
 	    		
-		else if (action.equalsIgnoreCase("analyze") ) {
-			
-			//TO_DO: need to get total sales for each customer
-			
-			PrintWriter out = response.getWriter();
-			List<String> col_vals = new ArrayList<String>();
-			
-			reset_offset(request, response);
-			
-			
-			
+		else if (action.equalsIgnoreCase("analyze") || action.equalsIgnoreCase("next 20") ) {
 			try{
-				System.out.println("analyze button was clicked");
-
-
-				
-				if (row_option.equals("customer")) {
+				if (row_option.equals("customer") || row_option.equals("state")) {
 					if (order_option.equals("alphabetical")|| (order_option.equalsIgnoreCase("top-k"))){
-					  	rs = statement.executeQuery("select * from person p, role r where p.role_id = r.id "+
-													"and r.role_name = 'Customer' order by p.person_name "+
-					  								"limit 20 ");
-						//System.out.println("ran query");
-						
-						List<String> row_vals = new ArrayList<String>();
-						HashMap<Integer, String> product_mapping = new HashMap<>();
-						
-						//maps customer_name to hashmap
-						HashMap< String, Map <String,Integer>> totalsales_per_customer = new HashMap<>();
-						
-						//populate list with customer names
-						String user;
+					  	
+						if(action.equalsIgnoreCase("analyze") && row_option.equalsIgnoreCase("customer")){
+							//reset the counter
+							reset_offset(request, response);
+							pstmt.setInt(1, 0);
+							rs = pstmt.executeQuery();
+						}
+						else if (action.equalsIgnoreCase("next 20") && row_option.equalsIgnoreCase("customer")){
+							//increase the counter
+							increase_offset(request,response);
+							pstmt.setInt(1, (int) session.getAttribute("counter"));
+							rs = pstmt.executeQuery();
+						}
+						else if(action.equalsIgnoreCase("analyze") && row_option.equalsIgnoreCase("state")){
+							//reset the counter
+							reset_offset(request, response);
+							pstmt2.setInt(1, 0);
+							rs = pstmt2.executeQuery();	
+						}
+						else{
+							//increase the counter
+							increase_offset(request,response);
+							pstmt2.setInt(1, (int) session.getAttribute("counter"));
+							rs = pstmt2.executeQuery();	
+						}
+
+
+						//populate row_vals with values for the rows
+						String tmp;
 						while (rs.next()){
-							user = rs.getString(2);
-							//System.out.println("filling in row_vals: "+user);							
-							row_vals.add(user);
+							tmp = rs.getString(2);						
+							row_vals.add(tmp);
 									 					 	
 						}
 
-						//get Map<product id, total sale> for every customer and put it in the list (TO-DO!)
-						//1. loop over the row_vals since those are the users, and 
-						//2.for each user:
+						//get Map<product id, total sale> for every customer/state and put it in the list 
+						//1. loop over the row_vals since those are the customer/state, and 
+						//2.for each customer/state:
 						//	run the getGrandTotalTable query, 
-						//3. get the values into hash map and insert into totalsales_per_customer
+						//3. get the values into hash map and insert into totalsales_per_rowval
 						
+						String row_val;
 						for (int i =0; i < row_vals.size(); i++) {
-							user = row_vals.get(i);
+							row_val = row_vals.get(i);
 							
-							
-							pstmt = conn.prepareStatement(getGrandTotalTable);
-							pstmt.setString(1, user);
+							if (row_option.equals("customer")){
+								pstmt = conn.prepareStatement(getGrandTotalTable);
+							}
+							else{
+								pstmt = conn.prepareStatement(getGrandTotalbyState);
+							}
+							pstmt.setString(1, row_val);
 							rs = pstmt.executeQuery();
-			
-							if (!rs.next()){
-								//System.out.println("ResultSet is empty");
-								
-								}
+
 							
 							//getting mapping from product id to product name
 							rc = statement2.executeQuery("select * from product");
@@ -286,26 +276,22 @@ public class SalesAnalyticsController extends HttpServlet {
 								product_mapping.put(rc.getInt(1), rc.getString(3));
 								
 							}
-		
-							HashMap <String, Integer> grandTotal = new HashMap<>();							
+					
 							int prod_id;
 							String prod_name;
 							while (rs.next()){
-								//System.out.print("in while loop");		
-								prod_id = rs.getInt(1);
-								
+	
+								prod_id = rs.getInt(1);							
 								prod_name = product_mapping.get(prod_id);
-								//get product name;
-		
+
+								//so in grandTotal, we can look up how much money was spent on each
+								//product (each customer/state has a grandTotal map.
 								grandTotal.put(prod_name, rs.getInt(2));
-								/*if (user.equals("CUST_0")){
-									System.out.println("CUST_0 spent " +Integer.toString(rs.getInt(2))+" on "+prod_name);
-								}*/
 
 							}
 							
 							//can sum up the values in the grandTotal hashmap to get the total amount
-							//of purchases ($) the user made
+							//of purchases ($) made
 							Integer total = 0;
 							Integer temp = 0;
 							for (Object value : grandTotal.values()) {
@@ -314,10 +300,9 @@ public class SalesAnalyticsController extends HttpServlet {
 							    total = total+temp;
 							}
 							//now insert into totalsales hashmap
-							totalsales.put(user, total);
+							totalsales.put(row_val, total);
 
-							
-							totalsales_per_customer.put(user,grandTotal);
+							totalsales_per_rowval.put(row_val,grandTotal);
 							
 						}
 				
@@ -350,19 +335,11 @@ public class SalesAnalyticsController extends HttpServlet {
 														 "c.category_name= ? "
 														 + "order by product_name "+
 														 "limit 10 ");
-							
-							System.out.println("user chose: "+sales_filter_option);
+
 							pstmt.setString(1, sales_filter_option);
 							
 							rt = pstmt.executeQuery();
-
 							
-							System.out.println("after rt executes query");
-							
-							if (!rt.next()){
-								System.out.println("empty!");
-							}
-
 							String prod;
 
 							while (rt.next()){
@@ -400,556 +377,43 @@ public class SalesAnalyticsController extends HttpServlet {
 							}
 							
 						}
-						
-
-						request.setAttribute("row_values",row_vals);
-						request.setAttribute("col_values",col_vals);
-						request.setAttribute("cell_values", totalsales_per_customer);
-						request.setAttribute("totalSales", totalsales);
 
 					}
-									
-					
-				}
-				else{  //QUERY BY STATE
-
-					if (order_option.equals("alphabetical")){
-						
-						//get the states
-					  	rs = statement.executeQuery("select * from state limit 20");
-						
-						List<String> row_vals = new ArrayList<String>();
-						HashMap<Integer, String> product_mapping = new HashMap<>();
-						
-						//maps each state to hashmap
-						HashMap< String, Map <String,Integer>> totalsales_per_state = new HashMap<>();
-						
-						//populate list with state names
-						String state;
-						while (rs.next()){
-							//System.out.println("filling in row_vals");
-							state = rs.getString(2);
-							row_vals.add(state);
-									 					 	
-						}
-
-						//get Map<product id, total sale> for every state and put it in the list (TO-DO!)
-						//1. loop over the row_vals since those are the state, and 
-						//2.for each state:
-						//	run the getGrandTotalbyState query, 
-						//3. get the values into hash map and insert into totalsales_per_state
-						
-						for (int i =0; i < row_vals.size(); i++) {
-							state = row_vals.get(i);
-							
-							
-							pstmt = conn.prepareStatement(getGrandTotalbyState);
-							pstmt.setString(1, state);
-							rs = pstmt.executeQuery();
-							
-							if (!rs.next()){
-								//System.out.println("ResultSet is empty");
-								
-								}
-							
-							//getting mapping from product id to product name
-							rc = statement2.executeQuery("select * from product");
-							while (rc.next()){
-								product_mapping.put(rc.getInt(1), rc.getString(3));
-								
-							}
-		
-							HashMap <String, Integer> grandTotal = new HashMap<>();							
-							int prod_id;
-							String prod_name;
-							while (rs.next()){
-								//System.out.print("in while loop");		
-								prod_id = rs.getInt(1);
-								
-								prod_name = product_mapping.get(prod_id);
-								//get product name;
-		
-								grandTotal.put(prod_name, rs.getInt(2));
-								if (state.equals("California")){
-									System.out.println("The state CA has total sale: " +Integer.toString(rs.getInt(2))+" on "+prod_name);
-								}
-
-							}
-							//can sum up the values in the grandTotal hashmap to get the total amount
-							//of purchases ($) made
-							Integer total = 0;
-							Integer temp = 0;
-							for (Object value : grandTotal.values()) {
-							    temp = (Integer) value;
-							    
-							    total = total+temp;
-							}
-							//now insert into totalsales hashmap
-							totalsales.put(state, total);							
-							
-							
-							
-							//System.out.println(user);								
-							totalsales_per_state.put(state, grandTotal);
-							
-						}
 				
-						
-						//now get the product names
-						if (sales_filter_option.equals("all_products")){
-							rt = statement1.executeQuery("select * from product order by product_name limit 10");					
-
-							
-							//System.out.println("obtained result set for products");
-							String prod;
-							while (rt.next()){
-								prod = rt.getString(3);
-								//System.out.println("filling in col_vals");				
-								col_vals.add(prod);							
-							}
-						}
-						else { //apply the sales filter
-
-
-							
-							pstmt = conn.prepareStatement("select * from product p, category c "+
-														 "where p.category_id = c.id and "+
-														 "c.category_name = ? "
-														 + "order by product_name "+
-														 "limit 10 ");	
-							pstmt.setString(1, sales_filter_option);
-							rt = pstmt.executeQuery();
-							
-
-							
-							//System.out.println("obtained result set for products");
-							String prod;
-							while (rt.next()){
-								prod = rt.getString(3);
-								//System.out.println("filling in col_vals");				
-								col_vals.add(prod);							
-							}							
-							
-						}
-
-						String prod;
-						while (rt.next()){
-							prod = rt.getString(3);
-							//System.out.println("filling in col_vals");				
-							col_vals.add(prod);							
-						}
-						
-						//System.out.println("setting attribute");
-						request.setAttribute("row_values",row_vals);
-						request.setAttribute("col_values",col_vals);
-						request.setAttribute("cell_values", totalsales_per_state);
-						request.setAttribute("totalSales",totalsales);
-
-					}
-									
-					
-					
-				}
+				}		
 			}catch (Exception e) {
-				// throw new ServletException("Could not update product.
-				// Retry.");
-				//request.setAttribute("error", true);
-				//request.setAttribute("errorMsg", "Could not update product. " + e.getMessage());
-				//e.printStackTrace();
 			}
 		}
+		//System.out.println("setting attribute");
+		request.setAttribute("row_values",row_vals);
+		request.setAttribute("col_values",col_vals);
+		request.setAttribute("cell_values", totalsales_per_rowval);
+		request.setAttribute("totalSales",totalsales);
 		
-		
-		//SUPER BAD CODE FIX LATER
-		
-		
-		
-		else if (action.equalsIgnoreCase("next 20")) {	
-			List<String> col_vals = new ArrayList<String>();
-			increase_offset(request,response);
-			
-			try{
-				System.out.println("next 20 was clicked");
-				if (row_option.equals("customer")) {
-					if (order_option.equals("alphabetical")){
-						
-						
-						System.out.println("made it in!!!");
-						
-						pstmt2 = conn.prepareStatement("select * from person p, role r where p.role_id = r.id "+
-													"and r.role_name = 'Customer' order by p.person_name "+
-					  								"limit 20 offset (20*?) ");
-						
-					  	/* rs = statement.executeQuery("select * from person p, role r where p.role_id = r.id "+
-													"and r.role_name = 'Customer' order by p.person_name "+
-					  								"limit 20 offset 20 "); */
-						
-						
-						//System.out.println("ran query");
-						
-						pstmt2.setInt(1, (Integer) session.getAttribute("counter"));
-						
-						rs = pstmt2.executeQuery();
-						
-						
-						//if there are no 20 tuples to return, offset by however many tuples
-						//we've returned
-						if (!rs.next()){
-							pstmt2 = conn.prepareStatement("select * from person p, role r where p.role_id = r.id "+
-													"and r.role_name = 'Customer' order by p.person_name "+
-					  								"offset (20*?) ");
-							pstmt2.setInt(1, (Integer) session.getAttribute("counter"));
-							rs = pstmt2.executeQuery();
-						}
-						
-						List<String> row_vals = new ArrayList<String>();
-						HashMap<Integer, String> product_mapping = new HashMap<>();
-						
-						//maps customer_name to hashmap
-						HashMap< String, Map <String,Integer>> totalsales_per_customer = new HashMap<>();
-						
-						//populate list with customer names
-						String user;
-						while (rs.next()){
-							//System.out.println("filling in row_vals");
-							user = rs.getString(2);
-							row_vals.add(user);
-									 					 	
-						}
-
-						//get Map<product id, total sale> for every customer and put it in the list (TO-DO!)
-						//1. loop over the row_vals since those are the users, and 
-						//2.for each user:
-						//	run the getGrandTotalTable query, 
-						//3. get the values into hash map and insert into totalsales_per_customer
-						
-						for (int i =0; i < row_vals.size(); i++) {
-							user = row_vals.get(i);
-							
-							
-							pstmt = conn.prepareStatement(getGrandTotalTable);
-							pstmt.setString(1, user);
-							rs = pstmt.executeQuery();
-							
-							if (!rs.next()){
-								//System.out.println("ResultSet is empty");
-								
-								}
-							
-							//getting mapping from product id to product name
-							rc = statement2.executeQuery("select * from product");
-							while (rc.next()){
-								product_mapping.put(rc.getInt(1), rc.getString(3));
-								
-							}
-		
-							HashMap <String, Integer> grandTotal = new HashMap<>();							
-							int prod_id;
-							String prod_name;
-							while (rs.next()){
-								//System.out.print("in while loop");		
-								prod_id = rs.getInt(1);
-								
-								prod_name = product_mapping.get(prod_id);
-								//get product name;
-		
-								grandTotal.put(prod_name, rs.getInt(2));
-								/*if (user.equals("CUST_0")){
-									System.out.println("CUST_0 spent " +Integer.toString(rs.getInt(2))+" on "+prod_name);
-								}*/
-
-							}
-							//can sum up the values in the grandTotal hashmap to get the total amount
-							//of purchases ($) the user made
-							Integer total = 0;
-							Integer temp = 0;
-							for (Object value : grandTotal.values()) {
-							    temp = (Integer) value;
-							    
-							    total = total+temp;
-							}
-							//now insert into totalsales hashmap
-							totalsales.put(user, total);
-							
-							
-							
-							//System.out.println(user);								
-							totalsales_per_customer.put(user,grandTotal);
-							
-						}
-				
-						
-						//now get the product names. if all_producuts was chosen, get
-						//all products. else, get only the category chosen...
-						
-						if (sales_filter_option.equals("all_products")){
-							System.out.println("getting all products");							
-							rt = statement1.executeQuery("select * "
-														+ "from product "
-														+ "order by product_name "
-														+ "limit 10 offset 10 ");					
-
-							
-							//System.out.println("obtained result set for products");
-							String prod;
-							while (rt.next()){
-								prod = rt.getString(3);
-								//System.out.println("filling in col_vals");				
-								col_vals.add(prod);							
-							}
-						}
-						else { //apply the sales filter
-
-							System.out.println("applying sales filter");
-							
-							pstmt = conn.prepareStatement("select p.product_name from product p, category c "+
-														 "where p.category_id = c.id and "+
-														 "c.category_name= ? "
-														 + "order by product_name "+
-														 "limit 10 offset 10 ");
-							
-							System.out.println("user chose: "+sales_filter_option);
-							pstmt.setString(1, sales_filter_option);
-							
-							rt = pstmt.executeQuery();
-
-							
-							System.out.println("after rt executes query");
-							
-							if (!rt.next()){
-								System.out.println("empty!");
-							}
-
-							String prod;
-							
-							System.out.println("before while loop");
-							while (rt.next()){
-								System.out.println("filling in col_vals (sales filter applied)");								
-								prod = rt.getString("product_name");
-			
-								col_vals.add(prod);							
-							}	
-							
-						}
-						
-						
-						//System.out.println("setting attribute");
-						request.setAttribute("row_values",row_vals);
-						request.setAttribute("col_values",col_vals);
-						request.setAttribute("cell_values", totalsales_per_customer);
-						request.setAttribute("totalSales", totalsales);
-
-					}
-									
-					
-				}
-				else{  //QUERY BY STATE
-
-					if (order_option.equals("alphabetical")){
-						
-						//get the states
-					  	//rs = statement.executeQuery("select * from state limit 20 offset 20 ");
-						pstmt2 = conn.prepareStatement("select * from state limit 20 offset (20*?)");
-
-						pstmt2.setInt(1, (Integer) session.getAttribute("counter"));
-						
-						rs = pstmt2.executeQuery();
-						
-						//if we don't have 20 tuples to return, return the leftovers (offset by
-						//however many tuples we've returned)
-						if (!rs.next()){
-							pstmt2 = conn.prepareStatement("select * from state offset (20*?)");
-							pstmt2.setInt(1, (Integer) session.getAttribute("counter"));
-							rs = pstmt2.executeQuery();
-						}
-
-					  	
-					  	
-						List<String> row_vals = new ArrayList<String>();
-						HashMap<Integer, String> product_mapping = new HashMap<>();
-						
-						//maps each state to hashmap
-						HashMap< String, Map <String,Integer>> totalsales_per_state = new HashMap<>();
-						
-						//populate list with state names
-						String state;
-						while (rs.next()){
-							//System.out.println("filling in row_vals");
-							state = rs.getString(2);
-							row_vals.add(state);
-									 					 	
-						}
-
-						//get Map<product id, total sale> for every state and put it in the list (TO-DO!)
-						//1. loop over the row_vals since those are the state, and 
-						//2.for each state:
-						//	run the getGrandTotalbyState query, 
-						//3. get the values into hash map and insert into totalsales_per_state
-						
-						for (int i =0; i < row_vals.size(); i++) {
-							state = row_vals.get(i);
-							
-							
-							pstmt = conn.prepareStatement(getGrandTotalbyState);
-							pstmt.setString(1, state);
-							rs = pstmt.executeQuery();
-							
-							if (!rs.next()){
-								//System.out.println("ResultSet is empty");
-								
-								}
-							
-							//getting mapping from product id to product name
-							rc = statement2.executeQuery("select * from product");
-							while (rc.next()){
-								product_mapping.put(rc.getInt(1), rc.getString(3));
-								
-							}
-		
-							HashMap <String, Integer> grandTotal = new HashMap<>();							
-							int prod_id;
-							String prod_name;
-							while (rs.next()){
-								//System.out.print("in while loop");		
-								prod_id = rs.getInt(1);
-								
-								prod_name = product_mapping.get(prod_id);
-								//get product name;
-		
-								grandTotal.put(prod_name, rs.getInt(2));
-								if (state.equals("California")){
-									System.out.println("The state CA has total sale: " +Integer.toString(rs.getInt(2))+" on "+prod_name);
-								}
-
-							}
-							
-							//can sum up the values in the grandTotal hashmap to get the total amount
-							//of purchases ($) the user made
-							Integer total = 0;
-							Integer temp = 0;
-							for (Object value : grandTotal.values()) {
-							    temp = (Integer) value;
-							    
-							    total = total+temp;
-							}
-							//now insert into totalsales hashmap
-							totalsales.put(state, total);
-							
-							
-							//System.out.println(user);								
-							totalsales_per_state.put(state, grandTotal);
-							
-						}
-				
-						
-						//now get the product names
-						if (sales_filter_option.equals("all_products")){
-							rt = statement1.executeQuery("select * from product order by product_name limit 10 offset 10");					
-
-							
-							//System.out.println("obtained result set for products");
-							String prod;
-							while (rt.next()){
-								prod = rt.getString(3);
-								//System.out.println("filling in col_vals");				
-								col_vals.add(prod);							
-							}
-						}
-						else { //apply the sales filter
-
-
-							
-							pstmt = conn.prepareStatement("select * from product p, category c "+
-														 "where p.category_id = c.id and "+
-														 "c.category_name = ? "
-														 + "order by product_name "+
-														 "limit 10 offset 10 ");	
-							pstmt.setString(1, sales_filter_option);
-							rt = pstmt.executeQuery();
-							
-
-							
-							//System.out.println("obtained result set for products");
-							String prod;
-							while (rt.next()){
-								prod = rt.getString(3);
-								//System.out.println("filling in col_vals");				
-								col_vals.add(prod);							
-							}							
-							
-						}
-
-						String prod;
-						while (rt.next()){
-							prod = rt.getString(3);
-							//System.out.println("filling in col_vals");				
-							col_vals.add(prod);							
-						}
-						
-						//System.out.println("setting attribute");
-						request.setAttribute("row_values",row_vals);
-						request.setAttribute("col_values",col_vals);
-						request.setAttribute("cell_values", totalsales_per_state);
-						request.setAttribute("totalSales", totalsales);
-
-					}
-		
-				}
-			}catch (Exception e) {
-				// throw new ServletException("Could not update product.
-				// Retry.");
-				//request.setAttribute("error", true);
-				//request.setAttribute("errorMsg", "Could not update product. " + e.getMessage());
-				//e.printStackTrace();
-			}
-		}		
-		
-		
-		
-			request.getRequestDispatcher("/salesanalytics.jsp").forward(request, response);
+		request.getRequestDispatcher("/salesanalytics.jsp").forward(request, response);
 
 		//statement.close();
 		}
 		catch(SQLException e){
 			
 		}
-		
-		
 		finally {
 		    // Release resources in a finally block in reverse-order of
 		    // their creation
-			    if (rs != null) {
+			    if (rs != null && rc != null && rt != null && pstmt != null && conn != null) {
 			        try {
 			            rs.close();
-			        } catch (SQLException e) { } // Ignore
-			        rs = null;
-			    }
-  
-			    if (rc != null) {
-			        try {
 			            rc.close();
-			        } catch (SQLException e) { } // Ignore
-			        rc = null;
-			    } 	    
-			    if (rt != null) {
-			        try {
 			            rt.close();
-			        } catch (SQLException e) { } // Ignore
-			        rt = null;
-			    } 			    
-			    if (pstmt != null) {
-			        try {
 			            pstmt.close();
-			        } catch (SQLException e) { } // Ignore
-			        pstmt = null;
-			    }			    
-			    if (conn != null) {
-			        try {
 			            conn.close();
 			        } catch (SQLException e) { } // Ignore
+			        rs = null;
+			        rt = null;
+			        rc = null;
+			        pstmt = null;
 			        conn = null;
-			    }
-			}		
-	}
-	
+			    }		    
+		}		
+	}	
 }
