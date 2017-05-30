@@ -73,6 +73,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		counter = counter+1;
 		session.setAttribute("row_counter", counter);		
 	}
+	
 	public void increase_column_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		int counter = 0;
@@ -84,14 +85,12 @@ public class SalesAnalyticsController extends HttpServlet {
 		session.setAttribute("column_counter", counter);		
 	}
 	
-	
 	public void reset_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		session.setAttribute("row_counter", 0);
 		session.setAttribute("column_counter", 0);
 	
 	}
-	
 	
 	public void filterbyCustomer(HttpServletRequest request, HttpServletResponse response){
 		
@@ -113,22 +112,30 @@ public class SalesAnalyticsController extends HttpServlet {
 		//filling in row values list with customer names.
 		
 		//first, check if it's ordered by alphabetical or top-k.
-		if (order_option.equals("alphabetical")){
+		if (order_option.equals("alphabetical")) {
 			customers = person.getNames((int)session.getAttribute("row_counter"));
+			
+			// Check if next rows button should be displayed.
+			if (person.getNames((int) session.getAttribute("row_counter") + 1).isEmpty())
+				session.setAttribute("hideNextRowsBtn", true);
 		}
 		else { //do the top-k ordering.
 			
 			//we need to see if a sales filter has been applied, but we will do that in the PersonDAO class
 			//when we build the list of customers sorted according to total purchases made...
 			
-			customers = person.getCustomersTopKlist(sales_filter_option,(int)session.getAttribute("row_counter"));		
+			customers = person.getCustomersTopKlist(sales_filter_option,(int)session.getAttribute("row_counter"));	
 			
+			// Check if next rows button should be displayed.
+			if (person.getCustomersTopKlist(sales_filter_option, ((int) session.getAttribute("row_counter") + 1)).isEmpty())
+				session.setAttribute("hideNextRowsBtn", true);
 		}
+		
 		//getting the mapping of user to the total money they spent in purchases.
-		if (sales_filter_option.equals("all_products")){
+		if (sales_filter_option.equals("all_products")) {
 			totalSales = person.getTotalPurchasesAllProducts(customers);
 		}
-		else{
+		else {
 			totalSales = person.getTotalPurchasesPerCategory(customers, sales_filter_option);
 		}
 
@@ -138,7 +145,11 @@ public class SalesAnalyticsController extends HttpServlet {
 		//get column values (product names) depending on the filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
 		products = product.filterProductbyCategory(sales_filter_option,(int)session.getAttribute("column_counter"));
-
+		
+		// Check if next columns button should be displayed.
+		if (product.filterProductbyCategory(sales_filter_option, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
+			session.setAttribute("hideNextColsBtn", true);
+				
 		// Set table session variables.
 		request.setAttribute("row_values",customers);
 		request.setAttribute("col_values",products);
@@ -165,8 +176,12 @@ public class SalesAnalyticsController extends HttpServlet {
 		//filling in row values list with state names.
 		
 		//first, check if it's ordered by alphabetical or top-k.
-		if (order_option.equals("alphabetical")){
-			states = StateDAO.getStatesOffset((int)session.getAttribute("row_counter"));
+		if (order_option.equals("alphabetical")) {
+			states = StateDAO.getStatesOffset((int) session.getAttribute("row_counter"));
+			
+			// Check if next rows button should be displayed.
+			if (StateDAO.getStatesOffset(((int) session.getAttribute("row_counter")) + 1).isEmpty())
+				session.setAttribute("hideNextRowsBtn", true);
 		}
 		else { //do the top-k ordering.
 			//we need to see if a sales filter has been applied.
@@ -194,26 +209,20 @@ public class SalesAnalyticsController extends HttpServlet {
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
 		products = product.filterProductbyCategory(sales_filter_option,(int)session.getAttribute("column_counter"));
 		
+		// Check if next columns button should be displayed.
+		if (product.filterProductbyCategory(sales_filter_option, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
+			session.setAttribute("hideNextColsBtn", true);
+		
 		request.setAttribute("row_values",states);
 		request.setAttribute("col_values",products);
 		request.setAttribute("cell_values", totalsales_per_state);
 		request.setAttribute("totalSales", totalSales);
-		
 	}
 	
-
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
 		response.getWriter().append("Served at: ").append(request.getContextPath());
 	}
-
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 * 
-	 */
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
@@ -239,6 +248,8 @@ public class SalesAnalyticsController extends HttpServlet {
 			session.removeAttribute("row");
 			session.removeAttribute("order");
 			session.removeAttribute("filter");
+			session.removeAttribute("hideNextRowsBtn");
+			session.removeAttribute("hideNextColsBtn");
 			reset_offset(request, response);
 		}
 		

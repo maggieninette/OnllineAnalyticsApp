@@ -74,8 +74,12 @@
 	</c:when>
 	<c:otherwise>
 		<form action="SalesAnalyticsController" method="post">
-			<input type="submit" value="Next 20 Rows" name="action" />
-			<input type="submit" value="Next 10 Columns" name="action" />
+			<c:if test="${sessionScope.hideNextRowsBtn eq null}">
+				<input type="submit" value="Next 20 Rows" name="action" />
+			</c:if>
+			<c:if test="${sessionScope.hideNextColsBtn eq null}">
+				<input type="submit" value="Next 10 Columns" name="action" />
+			</c:if>
 			<input type="submit" value="Reset" name="action" />
 		</form>
 		<table border="1">
