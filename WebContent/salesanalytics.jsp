@@ -25,6 +25,11 @@
 		cell_vals = (HashMap<String, Map <String,Integer>>) request.getAttribute("cell_values");
 		totalSales = (Map<String, Integer>) request.getAttribute("totalSales");
 	}
+	
+	Connection con = ConnectionManager.getConnection();
+	CategoryDAO categoryDao = new CategoryDAO(con);
+	List<CategoryModel> categoryList = categoryDao.getCategories();
+	con.close();
 %>
     
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -62,18 +67,9 @@
 					<td>
 						<select name="filter">
 							<option value="all_products">All Products</option>
-							<%
-								Connection con = ConnectionManager.getConnection();
-								CategoryDAO categoryDao = new CategoryDAO(con);
-								List<CategoryModel> category_list = categoryDao.getCategories();
-								con.close();
-							
-								for (CategoryModel cat : category_list) {
-							%>
-							<option value="<%=cat.getCategoryName()%>">"<%=cat.getCategoryName()%>"</option>
-							<%
-								}
-							%>
+							<c:forEach var="category" items="<%= categoryList %>">
+								<option value="${category.categoryName}">${category.categoryName}</option>
+							</c:forEach>
 						</select>
 					</td>
 				</tr>
