@@ -14,13 +14,7 @@
 <script src="javascript/basics.js"></script>
 
 	<%
-	
 
-	boolean b;
-	boolean firsttime = (boolean) session.getAttribute("firsttime");
-	//session.setAttribute("show20",false);
-	
-	System.out.println("counter: "+Integer.toString((Integer)session.getAttribute("counter")));
 	
 	
 	List<String> row_vals = new ArrayList<>();
@@ -28,12 +22,12 @@
 	HashMap<String, Map <String,Integer>> cell_vals = new HashMap<>();	
 	Map<String, Integer> totalSales = new HashMap<>();
 	
-	if(request.getAttribute("row_values") != null &&
-		request.getAttribute("col_values") != null &&
-		request.getAttribute("cell_values") != null &&
+	if(request.getAttribute("row_values") != null ||
+		request.getAttribute("col_values") != null ||
+		request.getAttribute("cell_values") != null ||
 		request.getAttribute("totalSales") != null){
 		
-		System.out.println("setting attributes");
+
 		row_vals = (List<String>) request.getAttribute("row_values"); 
 		col_vals = (List<String>) request.getAttribute("col_values");
 		cell_vals = (HashMap<String, Map <String,Integer>>) request.getAttribute("cell_values");
@@ -125,22 +119,7 @@ con.close();
 
 <table border="1">
 
- <%
- /* DON'T DELETE
-	<tr>
-		<td>XXX</td>
-	<c:forEach items="${products}" var="current">
-		<td> <c:out value="${current}"/> </td>
-	</c:forEach>	
-	<tr>
-	<c:forEach items="${customers}" var="current">
-		<tr> 
-		<td> <c:out value="${current}"/> </td>		
-		</tr>
-	</c:forEach>
-	*/
-	%>
-	
+
 	<tr>
 	<td> </td>
 	
@@ -178,8 +157,8 @@ con.close();
 		
 			
 		%>
-		<td><b> <%=user+" ("+Integer.toString(totalSales.get(user))+")" %></b></td>
-		<% 
+		<td><b> <%=user+ " ("+Integer.toString(totalSales.get(user))  +")" %></b></td>
+		<% //+ " ("+Integer.toString(totalSales.get(user))  +")"
 
 		
 		//loop through col vals to output cell values in correct order

@@ -28,6 +28,15 @@ public class ProductDAO {
 	private static final String FILTER_PRODUCT_ADMIN = "SELECT product.*, category.category_name, count(products_in_cart.product_id)"
 			+ " FROM product INNER JOIN category ON(product.category_id = category.id)"
 			+ " LEFT JOIN products_in_cart on (product.id = products_in_cart.product_id)";
+	
+	private static final String FILTER_PRODUCT_BY_CATEGORY = ("select * from product p, category c "+
+															 "where p.category_id = c.id and "+
+															 "c.category_name= ? "
+															 + "order by product_name "+
+															 "limit 10 offset (10*?)");
+	
+	private static final String SELECT_ALL_PRODUCT_OFFSET = ("select * from product limit 10 offset (10*?)");
+	
 
 	private static final String DELETE_PRODUCT_BY_ID = "DELETE FROM product WHERE id=?";
 	private Connection con;
@@ -261,6 +270,7 @@ public class ProductDAO {
 		ResultSet rs = null;
 		ArrayList<ProductModel> result = new ArrayList<ProductModel>();
 		try {
+			Connection con = ConnectionManager.getConnection();
 			pstmt = con.prepareStatement(sb.toString());
 			pstmt.setString(1, "%" + product_name + "%");
 			rs = pstmt.executeQuery();
@@ -391,4 +401,95 @@ public class ProductDAO {
 			}
 		}
 	}
+	
+	
+	/*
+	 * This function returns a list of products, and depending on the filter, it either
+	 * gets all products (20 at a time) or gets it from a specific category (20 at a time).
+	 * 
+	 */
+	public ArrayList<String> filterProductbyCategory(String filter, int offset){
+		ArrayList<String> products = new ArrayList<>();
+		ResultSet rs = null;
+		PreparedStatement ptst = null;
+		
+		
+		try{
+
+			if(filter.equals("all_products")){
+			 
+				ptst = con.prepareStatement(SELECT_ALL_PRODUCT_OFFSET);
+				ptst.setInt(1, offset);
+			}
+			else{
+				ptst = con.prepareStatement(FILTER_PRODUCT_BY_CATEGORY);
+
+				ptst.setString(1, filter);
+				ptst.setInt(2, offset);
+			}
+			rs = ptst.executeQuery();
+			String product;
+			while (rs.next()){
+				product = rs.getString(3);
+				//System.out.println("adding: "+product);
+				products.add(product);							
+			}
+			
+			
+		}
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			 e.printStackTrace();
+		}
+			
+		return products;	
+	
+	}
+	
+	/*
+	 * This function returns a list of ALL products from a given category (no offset).
+	 * 
+	 */
+	
+	public ArrayList<String> getProductsFromCategory(String category){
+		ArrayList<String> products = new ArrayList<>();
+		ResultSet rs = null;
+		PreparedStatement ps = null;
+		try{
+
+			ps = ConnectionManager.getConnection().prepareStatement("select * from product p, category c "+
+																	"where p.category_id = c.id "+
+																	"and c.category_name = ?");
+			ps.setString(1, category);
+			
+			rs = ps.executeQuery();
+			
+			while(rs.next()){
+				products.add(rs.getString("product_name"));
+			}
+			
+			
+		}catch (SQLException e){
+			e.printStackTrace();
+		}finally {
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			if (ps != null) {
+				try {
+					ps.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		return products;
+	}
+	
 }

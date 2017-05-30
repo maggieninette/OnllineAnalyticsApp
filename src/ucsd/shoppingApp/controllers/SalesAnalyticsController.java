@@ -29,7 +29,10 @@ import javax.servlet.http.HttpSession;
 import com.google.gson.Gson;
 
 import ucsd.shoppingApp.ConnectionManager;
+import ucsd.shoppingApp.Pair;
+import ucsd.shoppingApp.PersonDAO;
 import ucsd.shoppingApp.ProductDAO;
+import ucsd.shoppingApp.StateDAO;
 
 /**
  * Servlet implementation class SalesAnalyticsController
@@ -49,41 +52,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		con = ConnectionManager.getConnection();
 	}
 
-	public class MyPair
-	{
-	    private final String key;
-	    private final int value;
 
-	    public MyPair(String aKey, int aValue)
-	    {
-	        key   = aKey;
-	        value = aValue;
-	    }
-	    //key is the name (customer/state), value is total sales
-	    public String key()   { return key; }
-	    public int value() { return value; }
-	    
-
-	    
-	}
-
-    
-    public void bubbleSort(MyPair[] arr) {
-    	int n = arr.length;  
-        MyPair temp;  
-         for(int i=0; i < n; i++){  
-                 for(int j=1; j < (n-i); j++){  
-                          if(arr[j-1].value > arr[j].value){  
-                                 //swap elements  
-                                 temp = arr[j-1];  
-                                 arr[j-1] = arr[j];  
-                                 arr[j] = temp;  
-                         }                 
-                 }  
-         }
-    }
-	
-	
 	public void destroy() {
 		if (con != null) {
 			try {
@@ -94,21 +63,141 @@ public class SalesAnalyticsController extends HttpServlet {
 		}
 	}
 	
-	public void increase_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void increase_row_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		int counter = 0;
-		if (session.getAttribute("counter") != null){
-			counter = (Integer) session.getAttribute("counter");
+		if (session.getAttribute("row_counter") != null){
+			counter = (Integer) session.getAttribute("row_counter");
 		}
 
 		counter = counter+1;
-		session.setAttribute("counter", counter);		
+		session.setAttribute("row_counter", counter);		
 	}
+	public void increase_column_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		int counter = 0;
+		if (session.getAttribute("column_counter") != null){
+			counter = (Integer) session.getAttribute("column_counter");
+		}
+
+		counter = counter+1;
+		session.setAttribute("column_counter", counter);		
+	}
+	
 	
 	public void reset_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
-		session.setAttribute("counter", 0);
+		session.setAttribute("row_counter", 0);
+		session.setAttribute("column_counter", 0);
 	
+	}
+	
+	
+	public void filterbyCustomer(HttpServletRequest request, HttpServletResponse response){
+		
+		String sales_filter_option = request.getParameter("filter");	
+		String order_option = request.getParameter("order");
+		HttpSession session = request.getSession();
+		
+		//setting up the data structures
+		List<String> products = new ArrayList<String>();
+		List<String> customers = new ArrayList<String>();
+		Map<String, Integer> totalSales = new HashMap<>();
+
+		//maps customer_name to hashmap of (key:product name, value: purchases)
+		HashMap< String, Map <String,Integer>> totalsales_per_customer = new HashMap<>();
+			
+		PersonDAO person = new PersonDAO(ConnectionManager.getConnection());
+		
+		//filling in row values list with customer names.
+		
+		//first, check if it's ordered by alphabetical or top-k.
+		if (order_option.equals("alphabetical")){
+			customers = person.getNames((int)session.getAttribute("row_counter"));
+		}
+		else { //do the top-k ordering.
+			
+			//we need to see if a sales filter has been applied, but we will do that in the PersonDAO class
+			//when we build the list of customers sorted according to total purchases made...
+			
+			customers = person.getCustomersTopKlist(sales_filter_option,(int)session.getAttribute("row_counter"));		
+			
+		}
+		//getting the mapping of user to the total money they spent in purchases.
+		if (sales_filter_option.equals("all_products")){
+			totalSales = person.getTotalPurchasesAllProducts(customers);
+		}
+		else{
+			totalSales = person.getTotalPurchasesPerCategory(customers, sales_filter_option);
+		}
+
+		//get Map<product id, total sale> for every customer/state and put it in the list. 
+		totalsales_per_customer = person.getCustomerMapping(customers);
+
+		//get column values (product names) depending on the filter selected.
+		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
+		products = product.filterProductbyCategory(sales_filter_option,(int)session.getAttribute("column_counter"));
+		
+		request.setAttribute("row_values",customers);
+		request.setAttribute("col_values",products);
+		request.setAttribute("cell_values", totalsales_per_customer);
+		request.setAttribute("totalSales", totalSales);
+	
+
+	}
+	
+	
+	public void filterbyState(HttpServletRequest request, HttpServletResponse response){
+		String sales_filter_option = request.getParameter("filter");		
+		HttpSession session = request.getSession();
+		String order_option = request.getParameter("order");
+		
+		//setting up the data structures
+		List<String> products = new ArrayList<String>();
+		List<String> states = new ArrayList<String>();
+
+		Map <String, Integer> totalSales = new HashMap <>(); //maps customer to total purchases
+
+		//maps state_name to hashmap
+		HashMap< String, Map <String,Integer>> totalsales_per_state = new HashMap<>();
+
+		//filling in row values list with state names.
+		
+		//first, check if it's ordered by alphabetical or top-k.
+		if (order_option.equals("alphabetical")){
+			states = StateDAO.getStatesOffset((int)session.getAttribute("row_counter"));
+		}
+		else { //do the top-k ordering.
+			//we need to see if a sales filter has been applied.
+			if (sales_filter_option.equals("all_products")){
+				
+				//states =
+			}
+			else{
+				//states =
+			}
+		
+		}
+		//getting the mapping of state to the total money they spent in purchases.
+		if (sales_filter_option.equals("all_products")){
+			totalSales = StateDAO.getTotalPurchasesAllProducts(states);
+		}
+		else{
+			totalSales = StateDAO.getTotalPurchasesPerCategory(states, sales_filter_option);
+		}
+
+		//get Map<product id, total sale> for every customer/state and put it in the list. 
+		totalsales_per_state = StateDAO.getStateMapping(states);
+
+		//get column values (product names) depending on the filter selected.
+		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
+		products = product.filterProductbyCategory(sales_filter_option,(int)session.getAttribute("column_counter"));
+		
+		request.setAttribute("row_values",states);
+		request.setAttribute("col_values",products);
+		request.setAttribute("cell_values", totalsales_per_state);
+		request.setAttribute("totalSales", totalSales);
+		
 	}
 	
 
@@ -128,292 +217,27 @@ public class SalesAnalyticsController extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
 		//doGet(request, response);
-		
-		HttpSession session = request.getSession();
-		
+	
 		response.setContentType("text/html");
 		
 		String row_option = request.getParameter("row");
-		String order_option = request.getParameter("order");
-		String sales_filter_option = request.getParameter("filter");
 		String action = request.getParameter("action");
 
-		ResultSet rs = null;
-		ResultSet rc = null;
-		ResultSet rt = null;
-	    PreparedStatement pstmt = null;
-	    PreparedStatement pstmt2 = null;
-	    
-	    Connection conn = ConnectionManager.getConnection();
-	    session.setAttribute("firsttime", false);
-
-		try{
-			Statement statement = conn.createStatement();
-			Statement statement1 = conn.createStatement();
-			Statement statement2 = conn.createStatement();
-			
-			
-			String getGrandTotalTable = ("select product.id, coalesce(sum (quant*price),0) as grandtotal "+
-										"from product left outer join "+ 
-										
-											"(select product_id as prod_id, customer_name as cust, quantity as quant "+
-											"from "+ 
-													"(select pc.product_id as product_id, p.person_name as customer_name, "+ 
-										 				"pc.quantity as quantity "+
-										            "from person p, products_in_cart pc "+
-										            "where pc.cart_id in "+
-										                "(select sc.id "+ 
-										                 "from shopping_cart sc "+
-										                 "where sc.person_id = p.id and "+
-										                 "sc.is_purchased = 'true') "+
-										             ")  as smallertable "+
-										     "where customer_name= ? ) as newtable "+
-										
-										"on product.id = newtable.prod_id "+
-										"group by product.id "+
-										"; ");
-			
-		String getGrandTotalbyState = ("select product.id, coalesce(sum (quant*price),0) as grandtotal "+
-										"from product left outer join "+
-							
-											"(select product_id as prod_id, customer_name as cust, quantity as quant "+
-											"from state s, "+
-													"(select pc.product_id as product_id, p.person_name as customer_name, "+
-										             	"p.state_id as state_id, "+
-										 				"pc.quantity as quantity "+
-										            "from person p, products_in_cart pc "+
-										            "where pc.cart_id in "+
-										                "(select sc.id "+
-										                 "from shopping_cart sc "+
-										                 "where sc.person_id = p.id and "+
-										                 "sc.is_purchased = 'true') "+
-										             ")  as smallertable "+
-										     "where state_id = s.id and s.state_name= ? ) as newtable "+
-							
-										"on product.id = newtable.prod_id "+
-										"group by product.id ");
-		
-		pstmt = conn.prepareStatement("select * from person p, role r where p.role_id = r.id "+
-													"and r.role_name = 'Customer' order by p.person_name "+
-					  								"limit 20 offset (20*?) ");
-		pstmt2 = conn.prepareStatement("select * from state limit 20 offset (20*?)");
-		
-		//setting up the data structures
-		List<String> col_vals = new ArrayList<String>();
-		List<String> row_vals = new ArrayList<String>();
-		HashMap<Integer, String> product_mapping = new HashMap<>();
-		Map <String, Integer> totalsales = new HashMap <>(); //maps user/state to total purchases
-		HashMap <String, Integer> grandTotal = new HashMap<>();		
-		//maps customer_name to hashmap
-		HashMap< String, Map <String,Integer>> totalsales_per_rowval = new HashMap<>();
-
-		if (action.equalsIgnoreCase("reset")){
-			session.setAttribute("firsttime", true);
+		if(action.equals("analyze")){
+			reset_offset(request,response);	
 		}
-	    		
-		else if (action.equalsIgnoreCase("analyze") || action.equalsIgnoreCase("next 20") ) {
-			try{
-				if (row_option.equals("customer") || row_option.equals("state")) {
-					if (order_option.equals("alphabetical")|| (order_option.equalsIgnoreCase("top-k"))){
-					  	
-						if(action.equalsIgnoreCase("analyze") && row_option.equalsIgnoreCase("customer")){
-							//reset the counter
-							reset_offset(request, response);
-							pstmt.setInt(1, 0);
-							rs = pstmt.executeQuery();
-						}
-						else if (action.equalsIgnoreCase("next 20") && row_option.equalsIgnoreCase("customer")){
-							//increase the counter
-							increase_offset(request,response);
-							pstmt.setInt(1, (int) session.getAttribute("counter"));
-							rs = pstmt.executeQuery();
-						}
-						else if(action.equalsIgnoreCase("analyze") && row_option.equalsIgnoreCase("state")){
-							//reset the counter
-							reset_offset(request, response);
-							pstmt2.setInt(1, 0);
-							rs = pstmt2.executeQuery();	
-						}
-						else{
-							//increase the counter
-							increase_offset(request,response);
-							pstmt2.setInt(1, (int) session.getAttribute("counter"));
-							rs = pstmt2.executeQuery();	
-						}
-
-
-						//populate row_vals with values for the rows
-						String tmp;
-						while (rs.next()){
-							tmp = rs.getString(2);						
-							row_vals.add(tmp);
-									 					 	
-						}
-
-						//get Map<product id, total sale> for every customer/state and put it in the list 
-						//1. loop over the row_vals since those are the customer/state, and 
-						//2.for each customer/state:
-						//	run the getGrandTotalTable query, 
-						//3. get the values into hash map and insert into totalsales_per_rowval
-						
-						String row_val;
-						for (int i =0; i < row_vals.size(); i++) {
-							row_val = row_vals.get(i);
-							
-							if (row_option.equals("customer")){
-								pstmt = conn.prepareStatement(getGrandTotalTable);
-							}
-							else{
-								pstmt = conn.prepareStatement(getGrandTotalbyState);
-							}
-							pstmt.setString(1, row_val);
-							rs = pstmt.executeQuery();
-
-							
-							//getting mapping from product id to product name
-							rc = statement2.executeQuery("select * from product");
-							while (rc.next()){
-								product_mapping.put(rc.getInt(1), rc.getString(3));
-								
-							}
-					
-							int prod_id;
-							String prod_name;
-							while (rs.next()){
-	
-								prod_id = rs.getInt(1);							
-								prod_name = product_mapping.get(prod_id);
-
-								//so in grandTotal, we can look up how much money was spent on each
-								//product (each customer/state has a grandTotal map.
-								grandTotal.put(prod_name, rs.getInt(2));
-
-							}
-							
-							//can sum up the values in the grandTotal hashmap to get the total amount
-							//of purchases ($) made
-							Integer total = 0;
-							Integer temp = 0;
-							for (Object value : grandTotal.values()) {
-							    temp = (Integer) value;
-							    
-							    total = total+temp;
-							}
-							//now insert into totalsales hashmap
-							totalsales.put(row_val, total);
-
-							totalsales_per_rowval.put(row_val,grandTotal);
-							
-						}
-				
-						
-						//now get the product names. if all_producuts was chosen, get
-						//all products. else, get only the category chosen...
-						
-						if (sales_filter_option.equals("all_products")){
-					
-							rt = statement1.executeQuery("select * "
-														+ "from product "
-														+ "order by product_name "
-														+ "limit 10 ");					
-
-							
-							//System.out.println("obtained result set for products");
-							String prod;
-							while (rt.next()){
-								prod = rt.getString(3);
-				
-								col_vals.add(prod);							
-							}
-						}
-						else { //apply the sales filter
-
-							System.out.println("applying sales filter");
-							
-							pstmt = conn.prepareStatement("select p.product_name from product p, category c "+
-														 "where p.category_id = c.id and "+
-														 "c.category_name= ? "
-														 + "order by product_name "+
-														 "limit 10 ");
-
-							pstmt.setString(1, sales_filter_option);
-							
-							rt = pstmt.executeQuery();
-							
-							String prod;
-
-							while (rt.next()){
-								//System.out.println("filling in col_vals (sales filter applied)");								
-								prod = rt.getString("product_name");
-			
-								col_vals.add(prod);							
-							}	
-							
-						}
-						
-						//if the TOP-K ordering was chosen, need to order the rows according to
-						//how much money was spent
-
-						if (order_option.equalsIgnoreCase("top-k")){
-							
-							//need to sort the total sales
-							MyPair[] list = new MyPair[row_vals.size()];
-							
-							row_vals.clear();
-							int i =0;
-							for(Map.Entry<String,Integer> entry : totalsales.entrySet()) {
-								
-								//System.out.println("top k chosen: "+Integer.toString(entry.getValue()));
-								MyPair temp = new MyPair(entry.getKey(),entry.getValue());
-								
-								i++;
-
-						    }
-							System.out.println("just filled in the list");
-							bubbleSort(list);
-							System.out.println("just sorted");
-							for (int a =0; a<list.length;a++){
-								System.out.println(Integer.toString(list[a].value));
-							}
-							
-						}
-
-					}
-				
-				}		
-			}catch (Exception e) {
-			}
+		else if (action.equals("next 20")){
+			increase_row_offset(request,response);
 		}
-		//System.out.println("setting attribute");
-		request.setAttribute("row_values",row_vals);
-		request.setAttribute("col_values",col_vals);
-		request.setAttribute("cell_values", totalsales_per_rowval);
-		request.setAttribute("totalSales",totalsales);
-		
+
+		if(row_option.equals("customer")){
+			filterbyCustomer(request,response);
+		}
+		else{
+			filterbyState(request,response);
+		}
+
 		request.getRequestDispatcher("/salesanalytics.jsp").forward(request, response);
 
-		//statement.close();
-		}
-		catch(SQLException e){
-			
-		}
-		finally {
-		    // Release resources in a finally block in reverse-order of
-		    // their creation
-			    if (rs != null && rc != null && rt != null && pstmt != null && conn != null) {
-			        try {
-			            rs.close();
-			            rc.close();
-			            rt.close();
-			            pstmt.close();
-			            conn.close();
-			        } catch (SQLException e) { } // Ignore
-			        rs = null;
-			        rt = null;
-			        rc = null;
-			        pstmt = null;
-			        conn = null;
-			    }		    
-		}		
 	}	
 }
