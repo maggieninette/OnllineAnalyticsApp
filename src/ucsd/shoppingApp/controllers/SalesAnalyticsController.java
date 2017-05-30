@@ -95,9 +95,10 @@ public class SalesAnalyticsController extends HttpServlet {
 	
 	public void filterbyCustomer(HttpServletRequest request, HttpServletResponse response){
 		
-		String sales_filter_option = request.getParameter("filter");	
-		String order_option = request.getParameter("order");
+		// Get session variables.
 		HttpSession session = request.getSession();
+		String sales_filter_option = (String) session.getAttribute("filter");	
+		String order_option = (String) session.getAttribute("order");
 		
 		//setting up the data structures
 		List<String> products = new ArrayList<String>();
@@ -137,20 +138,20 @@ public class SalesAnalyticsController extends HttpServlet {
 		//get column values (product names) depending on the filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
 		products = product.filterProductbyCategory(sales_filter_option,(int)session.getAttribute("column_counter"));
-		
+
+		// Set table session variables.
 		request.setAttribute("row_values",customers);
 		request.setAttribute("col_values",products);
 		request.setAttribute("cell_values", totalsales_per_customer);
 		request.setAttribute("totalSales", totalSales);
-	
 
 	}
 	
-	
 	public void filterbyState(HttpServletRequest request, HttpServletResponse response){
-		String sales_filter_option = request.getParameter("filter");		
+		
 		HttpSession session = request.getSession();
-		String order_option = request.getParameter("order");
+		String sales_filter_option = (String) session.getAttribute("filter");
+		String order_option = (String) session.getAttribute("order");
 		
 		//setting up the data structures
 		List<String> products = new ArrayList<String>();
@@ -215,29 +216,49 @@ public class SalesAnalyticsController extends HttpServlet {
 	 */
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		//doGet(request, response);
-	
-		response.setContentType("text/html");
-		
-		String row_option = request.getParameter("row");
+
 		String action = request.getParameter("action");
-
-		if(action.equals("analyze")){
-			reset_offset(request,response);	
-		}
-		else if (action.equals("next 20")){
-			increase_row_offset(request,response);
-		}
-
-		if(row_option.equals("customer")){
-			filterbyCustomer(request,response);
-		}
-		else{
-			filterbyState(request,response);
+		
+		HttpSession session = request.getSession();
+		
+		if (action.equals("Run Query")) {
+			
+			// Set filter session variables.
+			session.setAttribute("row", request.getParameter("row"));
+			session.setAttribute("order", request.getParameter("order"));
+			session.setAttribute("filter", request.getParameter("filter"));
+		    session.setAttribute("firsttime", false);
 		}
 
+		// Get row filter session variable.
+		String rowOption = (String) session.getAttribute("row");
+
+		// Reset button clicked so resetting session variables.
+		if (action.equalsIgnoreCase("Reset")) {
+			session.removeAttribute("firsttime");
+			session.removeAttribute("row");
+			session.removeAttribute("order");
+			session.removeAttribute("filter");
+			reset_offset(request, response);
+		}
+		
+		else {
+			// Increase either row or column offset.
+			if (action.equalsIgnoreCase("Next 20 Rows")) {
+				increase_row_offset(request, response);
+			}
+
+			else if (action.equalsIgnoreCase("Next 10 Columns")) {
+				increase_column_offset(request, response);
+			}
+
+			// Filter by customer or state.
+			if (rowOption.equalsIgnoreCase("customer"))
+				filterbyCustomer(request, response);
+			else if (rowOption.equalsIgnoreCase("state"))
+				filterbyState(request, response);
+		}
+		
 		request.getRequestDispatcher("/salesanalytics.jsp").forward(request, response);
-
-	}	
+	}
 }

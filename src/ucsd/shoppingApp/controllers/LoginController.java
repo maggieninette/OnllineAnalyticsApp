@@ -45,7 +45,7 @@ public class LoginController extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		try {
 			HttpSession session = request.getSession();
-			session.setAttribute("firsttime",true);
+
 			
 			session.setAttribute("personName", uname);
 			PersonDAO personDao = new PersonDAO(con);
