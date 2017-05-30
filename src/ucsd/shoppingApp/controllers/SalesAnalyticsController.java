@@ -28,17 +28,11 @@ import ucsd.shoppingApp.StateDAO;
 public class SalesAnalyticsController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
-	
-
 	private Connection con = null;
 
 	public SalesAnalyticsController() {
 		con = ConnectionManager.getConnection();
 	}
-
 
 	public void destroy() {
 		if (con != null) {
@@ -53,7 +47,7 @@ public class SalesAnalyticsController extends HttpServlet {
 	public void increase_row_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		int counter = 0;
-		if (session.getAttribute("row_counter") != null){
+		if (session.getAttribute("row_counter") != null) {
 			counter = (Integer) session.getAttribute("row_counter");
 		}
 
@@ -64,11 +58,11 @@ public class SalesAnalyticsController extends HttpServlet {
 	public void increase_column_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		int counter = 0;
-		if (session.getAttribute("column_counter") != null){
+		if (session.getAttribute("column_counter") != null) {
 			counter = (Integer) session.getAttribute("column_counter");
 		}
 
-		counter = counter+1;
+		counter++;
 		session.setAttribute("column_counter", counter);		
 	}
 	
@@ -86,7 +80,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		String sales_filter_option = (String) session.getAttribute("filter");	
 		String order_option = (String) session.getAttribute("order");
 		
-		//setting up the data structures
+		// Initializing data structures to be used.
 		List<String> products = new ArrayList<String>();
 		List<String> customers = new ArrayList<String>();
 		Map<String, Integer> totalSales = new HashMap<>();
