@@ -15,25 +15,21 @@ public class StateDAO {
 	private static final String GET_STATES_ORDERED_SQL = "select id, state_name from state order by upper(state_name)"+
 														 "limit 20 offset (20*?)";
 	
-	private static final String BUILD_TABLE_SQL = ("select product.id, coalesce(sum (quant*price),0) as grandtotal "+
-										"from product left outer join "+
-							
-											"(select product_id as prod_id, customer_name as cust, quantity as quant "+
-											"from state s, "+
-													"(select pc.product_id as product_id, p.person_name as customer_name, "+
-										             	"p.state_id as state_id, "+
-										 				"pc.quantity as quantity "+
-										            "from person p, products_in_cart pc "+
-										            "where pc.cart_id in "+
-										                "(select sc.id "+
-										                 "from shopping_cart sc "+
-										                 "where sc.person_id = p.id and "+
-										                 "sc.is_purchased = 'true') "+
-										             ")  as smallertable "+
-										     "where state_id = s.id and s.state_name= ? ) as newtable "+
-							
-										"on product.id = newtable.prod_id "+
-										"group by product.id ");
+	private static final String BUILD_TABLE_SQL = 
+			"SELECT p.id, COALESCE(SUM(pr.price * pr.quantity), 0) " +
+			"FROM product p LEFT OUTER JOIN products_in_cart pr " +
+			"ON p.id = pr.product_id " +
+			"AND pr.cart_id IN " +
+			"    (SELECT s.id " +
+			"    FROM shopping_cart s, person pr, state st " +
+			"    WHERE s.person_id = pr.id " +
+			"		AND pr.state_id = st.id " +
+			"		AND st.state_name = ? " +
+			"    AND s.is_purchased = true) " +
+			"GROUP BY p.id " +
+			"ORDER BY p.id " +
+			"LIMIT 20 " +
+			"OFFSET 20 * ?";
 	
 	public static HashMap<Integer, String> getStates(Connection con) {
 		HashMap<Integer, String> states = new HashMap<Integer, String>();
@@ -104,7 +100,7 @@ public class StateDAO {
 	 * this way, we can find out the amount of sales made for a given product, per State.
 	 * 
 	 */
-	public static HashMap<String, Map <String,Integer>> getStateMapping(List<String> states){
+	public static HashMap<String, Map <String,Integer>> getStateMapping(List<String> states, int offset) {
 		
 		HashMap<String, Map <String,Integer>> totalsales_per_state = new HashMap<>();
 		HashMap<Integer,String> product_mapping = new HashMap<>();
@@ -126,6 +122,7 @@ public class StateDAO {
 
 				ptst = conn.prepareStatement(BUILD_TABLE_SQL);
 				ptst.setString(1, state);
+				ptst.setInt(2, offset);
 					
 				//rs is for getting the table for each state (how much money spent on each product)
 				rs = ptst.executeQuery();
@@ -177,10 +174,10 @@ public class StateDAO {
 	}
 	
 	//returns a mapping of state name to total purchases made across ALL products
-	public static Map<String,Integer> getTotalPurchasesAllProducts(List<String> states){
+	public static Map<String,Integer> getTotalPurchasesAllProducts(List<String> states) {
 		Map<String,Integer> totalSalesPerState = new HashMap<>();
 
-		HashMap<String, Map <String,Integer>> stateMapping = getStateMapping(states);
+		HashMap<String, Map <String,Integer>> stateMapping = getStateMapping(states, 0);
 		
 		//customerMapping is a hashmap that maps state to a hashmap of product names, and total purchase for that product.
 		//so, for each state's hashmap, we sum up the purchases...
@@ -206,10 +203,10 @@ public class StateDAO {
 	}
 	
 	//returns a mapping of state name to total purchases made across a SPECIFIC category
-	public static Map<String,Integer> getTotalPurchasesPerCategory(List<String> states, String category){
+	public static Map<String,Integer> getTotalPurchasesPerCategory(List<String> states, String category) {
 		Map<String,Integer> totalSalesPerState = new HashMap<>();
 
-		HashMap<String, Map <String,Integer>> stateMapping = getStateMapping(states);
+		HashMap<String, Map <String,Integer>> stateMapping = getStateMapping(states, 0);
 		
 		//customerMapping is a hashmap that maps user to a hashmap of product names, and total purchase for that product.
 		//so, for each customer's hashmap, we sum up the purchases ONLY for products belonging in

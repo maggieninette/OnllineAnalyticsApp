@@ -28,6 +28,21 @@ public class PersonDAO {
 			"AND p.role_id = r.id";
 	
 	public static final String BUILD_TABLE_SQL =
+					"SELECT p.id, COALESCE(SUM(pr.price * pr.quantity), 0) " +
+                    "FROM product p LEFT OUTER JOIN products_in_cart pr " +
+                    "ON p.id = pr.product_id " +
+                    "AND pr.cart_id IN " +
+                    "      (SELECT s.id " +
+                    "      FROM shopping_cart s, person p " +
+                    "      WHERE s.person_id = p.id " +
+                    "	   AND p.person_name = ? " +
+                    "      AND s.is_purchased = true) " +
+                    "GROUP BY p.id " +
+                    "ORDER BY p.id " +
+                    "LIMIT 20 " +
+                    "OFFSET 20 * ?";
+			
+			/*
 			"SELECT product.id, COALESCE(SUM(quant * price), 0) AS grandtotal " +
 			"FROM product LEFT OUTER JOIN " + 
 					"(SELECT product_id AS prod_id, customer_name AS cust, quantity AS quant " +
@@ -38,11 +53,15 @@ public class PersonDAO {
 									"(SELECT sc.id " + 
 									"FROM shopping_cart sc " +
 									"WHERE sc.person_id = p.id " +
-									"AND sc.is_purchased = true) " +
+									"AND sc.is_purchased = true)" +
 							") AS smallertable " +
-					"WHERE customer_name = ?) AS newtable " +
+					"WHERE customer_name = ? " +
+					") AS newtable " +
 			"ON product.id = newtable.prod_id " +
-			"GROUP BY product.id";
+			"GROUP BY product.id " +
+			"LIMIT 20 " +
+			"OFFSET (20 * ?)";
+			*/
 	
 	public static final String GET_PERSONS_ORDERED_SQL =
 			"SELECT * " +
@@ -191,7 +210,7 @@ public class PersonDAO {
 	 * Returns the map which maps a user to a mapping of (key: product, value: total purchase),
 	 * so we can find out how much money the user spent in total for each product.
 	 */
-	public HashMap<String, Map <String,Integer>> getCustomerMapping(List<String> customers){
+	public HashMap<String, Map <String,Integer>> getCustomerMapping(List<String> customers, int offset){
 		
 		HashMap<String, Map <String,Integer>> totalsales_per_customer = new HashMap<>();
 		HashMap<Integer,String> product_mapping = new HashMap<>();
@@ -208,6 +227,7 @@ public class PersonDAO {
 				customer = customers.get(i);
 				ptst = con.prepareStatement(BUILD_TABLE_SQL);
 				ptst.setString(1, customer);
+				ptst.setInt(2,  offset);
 					
 				//rs is for getting the table for each customer (how much money spent on each product)
 				rs = ptst.executeQuery();
@@ -293,7 +313,7 @@ public class PersonDAO {
 	public Map<String,Integer> getTotalPurchasesAllProducts(List<String> customers) {
 		Map<String,Integer> totalSalesPerCustomer = new HashMap<>();
 
-		HashMap<String, Map <String,Integer>> customerMapping = getCustomerMapping(customers);
+		HashMap<String, Map <String,Integer>> customerMapping = getCustomerMapping(customers, 0);
 		
 		//customerMapping is a hashmap that maps user to a hashmap of product names, and total purchase for that product.
 		//so, for each customer's hashmap, we sum up the purchases...
@@ -317,7 +337,7 @@ public class PersonDAO {
 	public Map<String,Integer> getTotalPurchasesPerCategory(List<String> customers, String category){
 		Map<String,Integer> totalSalesPerCustomer = new HashMap<>();
 
-		HashMap<String, Map <String,Integer>> customerMapping = getCustomerMapping(customers);
+		HashMap<String, Map <String,Integer>> customerMapping = getCustomerMapping(customers, 0);
 		
 		//customerMapping is a hashmap that maps user to a hashmap of product names, and total purchase for that product.
 		//so, for each customer's hashmap, we sum up the purchases ONLY for products belonging in

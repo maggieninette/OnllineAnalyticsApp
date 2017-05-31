@@ -105,7 +105,7 @@ public class SalesAnalyticsController extends HttpServlet {
 			//we need to see if a sales filter has been applied, but we will do that in the PersonDAO class
 			//when we build the list of customers sorted according to total purchases made...
 			
-			customers = person.getCustomersTopKlist(sales_filter_option,(int)session.getAttribute("row_counter"));	
+			customers = person.getCustomersTopKlist(sales_filter_option,(int) session.getAttribute("row_counter"));	
 			
 			// Check if next rows button should be displayed.
 			if (person.getCustomersTopKlist(sales_filter_option, ((int) session.getAttribute("row_counter") + 1)).isEmpty())
@@ -121,7 +121,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		}
 
 		//get Map<product id, total sale> for every customer/state and put it in the list. 
-		totalsales_per_customer = person.getCustomerMapping(customers);
+		totalsales_per_customer = person.getCustomerMapping(customers, (int)session.getAttribute("row_counter"));
 
 		//get column values (product names) depending on the filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
@@ -184,7 +184,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		}
 
 		//get Map<product id, total sale> for every customer/state and put it in the list. 
-		totalsales_per_state = StateDAO.getStateMapping(states);
+		totalsales_per_state = StateDAO.getStateMapping(states, (int) session.getAttribute("row_counter"));
 
 		//get column values (product names) depending on the filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
