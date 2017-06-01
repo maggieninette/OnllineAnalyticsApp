@@ -3,6 +3,7 @@ package ucsd.shoppingApp;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,6 +15,7 @@ public class StateDAO {
 	
 	private static final String GET_STATES_ORDERED_SQL = "select id, state_name from state order by upper(state_name)"+
 														 "limit 20 offset (20*?)";
+
 	
 	private static final String BUILD_TABLE_SQL = 
 			"SELECT p.id, COALESCE(SUM(pr.price * pr.quantity), 0) " +
@@ -28,8 +30,36 @@ public class StateDAO {
 			"    AND s.is_purchased = true) " +
 			"GROUP BY p.id " +
 			"ORDER BY p.id " +
-			"LIMIT 20 " +
-			"OFFSET 20 * ?";
+			"LIMIT 10 " +
+			"OFFSET 10 * ?";
+	
+	
+	public static final String BUILD_TABLE_SQL2 =
+			"select product_name,product.id, coalesce(sum (quant*price),0) as grandtotal "+
+			"from product left outer join "+ 
+										
+				"(select product_id as prod_id, customer_name as cust, quantity as quant "+
+				"from state s, "+
+					"(select pc.product_id as product_id, p.person_name as customer_name, "+
+							"p.state_id as state_id, pc.quantity as quantity "+
+					"from person p, products_in_cart pc "+ 
+					"where pc.cart_id in  "+
+							"(select sc.id  "+
+							"from shopping_cart sc  "+
+							"where sc.person_id = p.id and "+ 
+							"sc.is_purchased = 'true') "+
+							")  as smallertable  "+
+					"where state_id = s.id and s.state_name= ? ) as newtable "+ 
+										
+			"on product.id = newtable.prod_id "+ 
+			"group by product.id "+ 
+			 "order by product.id "+
+			"limit 20 "+
+			 "offset 20*?"
+			    
+			 
+			;
+	
 	
 	public static HashMap<Integer, String> getStates(Connection con) {
 		HashMap<Integer, String> states = new HashMap<Integer, String>();
@@ -105,7 +135,7 @@ public class StateDAO {
 		HashMap<String, Map <String,Integer>> totalsales_per_state = new HashMap<>();
 		HashMap<Integer,String> product_mapping = new HashMap<>();
 		
-		
+		System.out.println("offset for state mapping: "+Integer.toString(offset));
 		PreparedStatement ptst = null;
 		ResultSet rs = null;
 		ResultSet rc = null;
@@ -143,6 +173,13 @@ public class StateDAO {
 					//so in grandTotal, we can look up how much money was spent on each
 					//product by name (each customer has a grandTotal map.
 					grandTotal.put(product_name, rs.getInt(2));
+					
+					//System.out.println(state+" , "+product_name+" , "+Integer.toString(rs.getInt(2)));
+					/*if (state.equals("Wisconsin") ){
+						System.out.println("product: "+product_name+", total: "+Integer.toString(rs.getInt(2)));
+						
+					}*/
+					
 
 				}
 
@@ -236,6 +273,97 @@ public class StateDAO {
 		
 		return totalSalesPerState;
 		
+	}
+	
+	
+	// This function builds a list of states sorted according to the total money they've spent.
+	public static List<String> buildStatesTopKlist(String filter){
+		List<String> statesTopKSorted = new ArrayList<>();
+		List<String> all_states= new ArrayList<>();
+
+		ResultSet rs = null;
+		Statement stmt = null;
+		Connection conn = null;
+		
+		try{
+			conn = ConnectionManager.getConnection();
+			stmt = conn.createStatement();
+			
+			rs = stmt.executeQuery(STATES_SQL);
+			
+			while (rs.next()){
+				all_states.add(rs.getString("state_name"));
+			}
+
+			Map<String,Integer> totalSalesPerState;
+			
+			// Check if sales filter had been applied.
+			if (filter.equals("all_products")) {
+				totalSalesPerState = getTotalPurchasesAllProducts(all_states);
+			}
+			else {
+				totalSalesPerState = getTotalPurchasesPerCategory(all_states, filter);
+			}
+
+			// Make pairs (customer, total money spent) and sort the list.
+			Pair[] statesTotalPairs = new Pair[all_states.size()];
+			int i =0;
+		    for (Map.Entry<String, Integer> entry : totalSalesPerState.entrySet()) {
+		    	Pair stateTotalPair = new Pair(entry.getKey(),entry.getValue());
+		    	statesTotalPairs[i] = stateTotalPair;
+		    	i++;
+		    }
+		    
+		    // Sort list of pairs.
+		    Pair[] sortedStateTotalPairs = Pair.bubbleSort(statesTotalPairs);
+		    
+		    // now put it into the statesTopK list. Start from the end of the stateTotalPairs...
+		    for (int j = sortedStateTotalPairs.length - 1; j >= 0; j--) {
+		    	System.out.println(sortedStateTotalPairs[j].key());
+		    	
+		    	statesTopKSorted.add(sortedStateTotalPairs[j].key());
+		    }
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (stmt != null) {
+					stmt.close();
+				}
+				if (conn != null) {
+					conn.close();
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}	
+		return statesTopKSorted;
+	}
+	
+	// This function calls the buildCustomersTopKlist and gets 20 customers at a time.
+	public static List<String> getStatesTopKlist(String filter,int list_offset){
+		
+		List<String> statesTopK = new ArrayList<>();
+		List<String> all_states_topk_sorted = buildStatesTopKlist(filter);
+		
+		// Start getting names from the all_customers_topk_sorted list starting from list_offset * 20.
+		int counter = 1;
+		for (int i = list_offset*20;i < all_states_topk_sorted.size(); i++ ) {
+			String state = all_states_topk_sorted.get(i);
+			statesTopK.add(state);
+			if (counter == 20) {
+				break;
+			}
+			counter++;
+		}
+		
+		return statesTopK;
 	}
 	
 }

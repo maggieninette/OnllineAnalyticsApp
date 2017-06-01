@@ -39,8 +39,8 @@ public class PersonDAO {
                     "      AND s.is_purchased = true) " +
                     "GROUP BY p.id " +
                     "ORDER BY p.id " +
-                    "LIMIT 20 " +
-                    "OFFSET 20 * ?";
+                    "LIMIT 10 " +
+                    "OFFSET 10 * ?";
 			
 			/*
 			"SELECT product.id, COALESCE(SUM(quant * price), 0) AS grandtotal " +
@@ -327,6 +327,7 @@ public class PersonDAO {
 		    	total = total + entry2.getValue();
 		    }  
 
+		    System.out.println("getting totalSalesPerCustomer mapping, customer: "+customer);
 		    totalSalesPerCustomer.put(customer, total);
 		}
 		

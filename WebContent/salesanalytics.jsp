@@ -115,8 +115,16 @@
 					String temp;
 					temp = col_vals.get(j);
 				
+					//System.out.println(user);
 					if (userSales.get(temp) != null) {
+						
+			
 						sale = userSales.get(temp);
+						
+						if(user.equals("Wisconsin")){
+							
+							System.out.println("(in jsp). product: "+temp+", total sale: "+Integer.toString(sale));
+						}
 					}
 			%>
 			<td><%= sale %></td>

@@ -121,7 +121,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		}
 
 		//get Map<product id, total sale> for every customer/state and put it in the list. 
-		totalsales_per_customer = person.getCustomerMapping(customers, (int)session.getAttribute("row_counter"));
+		totalsales_per_customer = person.getCustomerMapping(customers, (int)session.getAttribute("column_counter"));
 
 		//get column values (product names) depending on the filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
@@ -165,14 +165,14 @@ public class SalesAnalyticsController extends HttpServlet {
 				session.setAttribute("hideNextRowsBtn", true);
 		}
 		else { //do the top-k ordering.
-			//we need to see if a sales filter has been applied.
-			if (sales_filter_option.equals("all_products")){
-				
-				//states =
-			}
-			else{
-				//states =
-			}
+			//we need to see if a sales filter has been applied, but we will do that in the StateDAO class
+			//when we build the list of states sorted according to total purchases made...
+			
+			states = StateDAO.getStatesTopKlist(sales_filter_option,(int) session.getAttribute("row_counter"));	
+			
+			// Check if next rows button should be displayed.
+			if (StateDAO.getStatesTopKlist(sales_filter_option, ((int) session.getAttribute("row_counter") + 1)).isEmpty())
+				session.setAttribute("hideNextRowsBtn", true);
 		
 		}
 		//getting the mapping of state to the total money they spent in purchases.
@@ -184,7 +184,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		}
 
 		//get Map<product id, total sale> for every customer/state and put it in the list. 
-		totalsales_per_state = StateDAO.getStateMapping(states, (int) session.getAttribute("row_counter"));
+		totalsales_per_state = StateDAO.getStateMapping(states, (int) session.getAttribute("column_counter"));
 
 		//get column values (product names) depending on the filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
