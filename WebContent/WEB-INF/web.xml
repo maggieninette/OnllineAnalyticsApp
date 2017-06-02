@@ -4,8 +4,6 @@
   <welcome-file-list>
     <welcome-file>home.jsp</welcome-file>
   </welcome-file-list>
-  
-  
   <servlet>
     <servlet-name>LoginController</servlet-name>
     <servlet-class>ucsd.shoppingApp.controllers.LoginController</servlet-class>

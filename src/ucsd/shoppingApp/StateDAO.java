@@ -306,22 +306,22 @@ public class StateDAO {
 			}
 
 			// Make pairs (customer, total money spent) and sort the list.
-			Pair[] statesTotalPairs = new Pair[all_states.size()];
+			ArrayList<Pair> statesTotalPairs = new ArrayList<>();
 			int i =0;
 		    for (Map.Entry<String, Integer> entry : totalSalesPerState.entrySet()) {
 		    	Pair stateTotalPair = new Pair(entry.getKey(),entry.getValue());
-		    	statesTotalPairs[i] = stateTotalPair;
+		    	statesTotalPairs.add(stateTotalPair);
 		    	i++;
 		    }
 		    
 		    // Sort list of pairs.
-		    Pair[] sortedStateTotalPairs = Pair.bubbleSort(statesTotalPairs);
+		    ArrayList<Pair> sortedStateTotalPairs = Pair.bubbleSort(statesTotalPairs);
 		    
 		    // now put it into the statesTopK list. Start from the end of the stateTotalPairs...
-		    for (int j = sortedStateTotalPairs.length - 1; j >= 0; j--) {
-		    	System.out.println(sortedStateTotalPairs[j].key());
+		    for (int j = sortedStateTotalPairs.size() - 1; j >= 0; j--) {
+
 		    	
-		    	statesTopKSorted.add(sortedStateTotalPairs[j].key());
+		    	statesTopKSorted.add(sortedStateTotalPairs.get(j).key());
 		    }
 		}
 		catch (SQLException e) {

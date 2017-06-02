@@ -394,20 +394,20 @@ public class PersonDAO {
 			}
 
 			// Make pairs (customer, total money spent) and sort the list.
-			Pair[] customerTotalPairs = new Pair[all_customers.size()];
+			ArrayList<Pair> customerTotalPairs = new ArrayList<>();
 			int i =0;
 		    for (Map.Entry<String, Integer> entry : totalSalesPerCustomer.entrySet()) {
 		    	Pair customerTotalPair = new Pair(entry.getKey(),entry.getValue());
-		    	customerTotalPairs[i] = customerTotalPair;
+		    	customerTotalPairs.add(customerTotalPair);
 		    	i++;
 		    }
 		    
 		    // Sort list of pairs.
-		    Pair[] sortedCustomerTotalPairs = Pair.bubbleSort(customerTotalPairs);
+		    ArrayList<Pair> sortedCustomerTotalPairs = Pair.bubbleSort(customerTotalPairs);
 		    
 		    // now put it into the customersTopK list. Start from the end of the customerTotalPairs...
-		    for (int j = sortedCustomerTotalPairs.length - 1; j >= 0; j--) {
-		    	customersTopKSorted.add(sortedCustomerTotalPairs[j].key());
+		    for (int j = sortedCustomerTotalPairs.size() - 1; j >= 0; j--) {
+		    	customersTopKSorted.add(sortedCustomerTotalPairs.get(j).key());
 		    }
 		}
 		catch (SQLException e) {
@@ -451,4 +451,42 @@ public class PersonDAO {
 		
 		return customersTopK;
 	}
+	
+	//This function returns all customers.
+	public List<String> getAllCustomers(){
+		List<String> allCustomers = new ArrayList<>();
+		
+		ResultSet rs = null;
+		Statement stmt = null;
+		try{
+			stmt = ConnectionManager.getConnection().createStatement();
+			rs = stmt.executeQuery(GET_ALL_CUSTOMERS);
+			
+			while(rs.next()){
+				allCustomers.add(rs.getString("person_name"));
+			}
+			
+		}catch (SQLException e){
+			e.printStackTrace();
+		}
+		finally{
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (stmt != null) {
+					stmt.close();
+				}
+				
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		return allCustomers;
+	}
+	
 }
+
+
+

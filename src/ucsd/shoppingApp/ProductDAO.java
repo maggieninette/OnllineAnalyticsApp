@@ -1,11 +1,16 @@
 package ucsd.shoppingApp;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import ucsd.shoppingApp.models.ProductModel;
 import ucsd.shoppingApp.models.ProductModelExtended;
@@ -39,6 +44,21 @@ public class ProductDAO {
 	
 
 	private static final String DELETE_PRODUCT_BY_ID = "DELETE FROM product WHERE id=?";
+	
+	private static final String GET_TOTAL_SALES_FOR_EACH_PRODUCT = "select p.product_name, coalesce(totalsale,0) "+
+																	"from product p left outer join "+ 
+																	"(select product_id, sum(totalsale) as totalsale "+
+																	"from( "+
+																        "select prod.product_name as product_name, p.person_name as person_name,  "+
+																        					"prod.id as product_id, (prod.price*pc.quantity) as totalsale "+
+																        "from person p, product prod, shopping_cart sc, products_in_cart pc "+
+																        "where p.id = sc.person_id and sc.id = pc.cart_id and sc.is_purchased='true' "+
+																        "and pc.product_id=prod.id) as customerpurchases "+
+																    "group by product_id) as salesmade "+
+																    
+																    "on p.id = product_id";
+															
+	
 	private Connection con;
 
 	public ProductDAO(Connection con) {
@@ -492,4 +512,272 @@ public class ProductDAO {
 		return products;
 	}
 	
+	
+	//This function returns a map of products and the total sales made for that product. 
+	public HashMap<String,Integer> getTotalSales(){
+		HashMap<String, Integer> totalSalesPerProduct = new HashMap<>();
+		
+		ResultSet rs = null;
+		Statement stmt = null;
+		try{
+			stmt = ConnectionManager.getConnection().createStatement();
+			rs = stmt.executeQuery(GET_TOTAL_SALES_FOR_EACH_PRODUCT);
+			
+			while(rs.next()){
+				System.out.println("product: "+rs.getString("product_name")+", total sale: "+Integer.toString(rs.getInt(2)));
+				totalSalesPerProduct.put(rs.getString("product_name"),rs.getInt(2));
+			}
+			
+		}catch (SQLException e){
+			e.printStackTrace();
+		}
+		finally{
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (stmt != null) {
+					stmt.close();
+				}
+				
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		
+		return totalSalesPerProduct;
+		
+	}
+	
+	
+	/*
+	 * This function returns  map of products and their hashmap(vector) (key: customer, value: total sale)
+	 */
+	public Map<String, Map<String,Integer>> getVector(HashMap<String, Map <String,Integer>> customerMapping){
+		Map<String, Map<String, Integer>> productVectors = new HashMap<>();
+		
+
+		ResultSet rs = null;
+		Statement stmt = null;
+		try{
+			stmt = ConnectionManager.getConnection().createStatement();
+			rs = stmt.executeQuery(SELECT_ALL_PRODUCT_SQL);
+			
+			while(rs.next()){
+				
+				String productName = rs.getString("product_name");
+				
+				//Need to build the hashmap for each product
+				Map<String,Integer> productVector = new HashMap<>();
+				
+				for (Map.Entry<String, Map <String,Integer>> entry : customerMapping.entrySet()) {
+				    String customerName = entry.getKey();
+				    
+				    //The hashmap (key:product, value: totalpurchase) for that specific customer.
+				    Map<String,Integer> customerPurchaseMap = entry.getValue();
+				    
+
+				    
+				    int totalPurchaseMadeByCustomer = customerPurchaseMap.get(productName);
+				    
+				    //System.out.println("customer: "+customerName+" spent "+Integer.toString(totalPurchaseMadeByCustomer)+" on "+productName);
+				    productVector.put(customerName,totalPurchaseMadeByCustomer);
+				}
+
+				productVectors.put(productName, productVector);
+			}
+			
+		}catch (SQLException e){
+			e.printStackTrace();
+		}
+		finally{
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (stmt != null) {
+					stmt.close();
+				}
+				
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		
+		return productVectors;
+	}
+	
+	
+	public List<String> getAllProducts(){
+		List<String> products = new ArrayList<>();
+		
+		ResultSet rs = null;
+		Statement stmt = null;
+		try{
+			stmt = ConnectionManager.getConnection().createStatement();
+			rs = stmt.executeQuery(SELECT_ALL_PRODUCT_SQL);
+			
+			while(rs.next()){
+				
+				String productName = rs.getString("product_name");
+
+				products.add(productName);
+			}
+			
+		}catch (SQLException e){
+			e.printStackTrace();
+		}
+		finally{
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (stmt != null) {
+					stmt.close();
+				}
+				
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		
+		
+		return products;
+		
+	}
+	
+	//Returns a hashmap for a given product, mapping their cosine similarity with every product in
+	//the table.
+	public Map<Pair,BigDecimal> getCosineSimilarityMapAllProducts(Map<String, Map<String,Integer>> productVectors,
+														HashMap<String,Integer> totalSalesPerProduct,
+														List<String> allProducts){
+		
+		
+		HashMap<String,BigDecimal> cosineSimilarityMap = new HashMap<>();
+		 MathContext mc = new MathContext(4);
+		
+
+		Map<String,Integer> otherProductVector;
+		String otherProduct;
+		Map<Pair, BigDecimal> cosinePairs = new HashMap<>();
+		
+		//Loop through the allProducts list and get their cosine similarity with givenProduct.
+		for (int j = 0; j <allProducts.size();j++){
+			String product1 = allProducts.get(j);
+			Map<String,Integer> givenProductVector = productVectors.get(product1);
+			
+			for (int i = 0; i < allProducts.size(); i++){
+				if (!allProducts.get(i).equals(product1)){
+					BigDecimal accumulator = new BigDecimal(0);
+					otherProduct = allProducts.get(i);
+					
+					//Get the other product's vector.
+					otherProductVector = productVectors.get(otherProduct);
+					
+					
+					//Go through both vectors, multiply and add...
+				    for (String customer : otherProductVector.keySet()) {
+				    	
+				    	//System.out.println(Integer.toString(otherProductVector.get(customer)));
+				    	//System.out.println(Integer.toString(givenProductVector.get(customer)));
+				    	
+				    	BigDecimal otherProductTotal = new BigDecimal (otherProductVector.get(customer));
+				    	BigDecimal givenProductTotal = new BigDecimal (givenProductVector.get(customer));
+				    	
+				    	BigDecimal tmp = otherProductTotal.multiply(givenProductTotal);
+				    	accumulator = accumulator.add(tmp);   
+				    	
+				    }
+				  //Now divide by (totalSales of givenProduct * totalSales of otherProduct)
+				    BigDecimal totalSaleGivenProduct = new BigDecimal(totalSalesPerProduct.get(product1));
+				    BigDecimal totalSaleOtherProduct = new BigDecimal(totalSalesPerProduct.get(otherProduct));
+				    BigDecimal cosineSimilarity = new BigDecimal(0);
+				    
+				    //If it equals to 0 then, don't divide.
+				    
+				    //System.out.println("Accuumulator: "+accumulator+" , "+totalSaleGivenProduct+" , "+totalSaleOtherProduct);
+				    
+				    BigDecimal divideBy = totalSaleGivenProduct.multiply(totalSaleOtherProduct,mc);
+				    if (divideBy.compareTo(new BigDecimal(0))==1){
+				    	
+				    	cosineSimilarity = accumulator.divide(divideBy,mc);
+				    }
+				    
+	
+				    System.out.println("cosine similarity between "+product1+ " and "+otherProduct+ " is "+cosineSimilarity.toString());
+				    cosineSimilarityMap.put(otherProduct, cosineSimilarity);
+				    
+				    
+				    Pair cosinePair = new Pair(product1, otherProduct);
+				    cosinePairs.put(cosinePair, cosineSimilarity);
+				    
+			
+				}
+			
+			}
+		
+		}
+
+		//return cosineSimilarityMap;
+		Map<Pair,BigDecimal> sortedPairs = Pair.sortMap(cosinePairs);
+		return sortedPairs;
+	}
+	
+	//Calls the getCosineSimilarityPerProduct on every product. So, in the end, we would have the mapping
+	//of product to hashmap of (product, cosine similarity)
+	public Map<Pair, BigDecimal> getCosineSimilarity(Map<String, Map<String,Integer>> productVectors,
+														HashMap<String,Integer> totalSalesPerProduct,
+														List<String> allProducts){
+		
+
+		Map<Pair,BigDecimal> sortedPairs = getCosineSimilarityMapAllProducts(productVectors,
+														totalSalesPerProduct, allProducts);
+		
+		
+		//Get all entries into a list, then starting from the end of the list, (get 100) and put it back into the map
+		Map<Pair,BigDecimal> sortedPairsDescending = new HashMap<>();
+		Pair[] arr = new Pair[100];
+		
+		int i = 0;
+		for (Map.Entry<Pair, BigDecimal> entry : sortedPairs.entrySet() ) {
+	
+			Pair productPair = entry.getKey();
+			BigDecimal cosine = entry.getValue();
+			Pair wrapped = new Pair (productPair,cosine);
+
+			arr[i] = wrapped;
+			System.out.println(arr[i].getPair().getProduct1());
+			i++;
+			
+		}
+		
+	/*	for (int j = (arr.length)-1; j >=0; j--){
+			System.out.println("test");
+			Pair wrapper = arr[j];
+			BigDecimal cosineTmp = wrapper.getCosine();
+
+
+
+			sortedPairsDescending.put(tmp.getPair(), tmp.getCosine());
+		
+		}*/
+		
+		
+		
+		return sortedPairs;
+		
+		
+		
+		
+	}
+	
+	
 }
+
+
+
+
+
