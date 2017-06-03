@@ -21,9 +21,6 @@ import ucsd.shoppingApp.PersonDAO;
 import ucsd.shoppingApp.ProductDAO;
 import ucsd.shoppingApp.StateDAO;
 
-/**
- * Servlet implementation class SalesAnalyticsController
- */
 @WebServlet("/SalesAnalyticsController")
 public class SalesAnalyticsController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -43,37 +40,65 @@ public class SalesAnalyticsController extends HttpServlet {
 			}
 		}
 	}
-	
-	public void increase_row_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		HttpSession session = request.getSession();
+
+    /**
+     * Increments row offset by one and resets it as a session variable.
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+	public void increaseRowOffset(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+	    HttpSession session = request.getSession();
 		int counter = 0;
+
 		if (session.getAttribute("row_counter") != null) {
 			counter = (Integer) session.getAttribute("row_counter");
 		}
 
-		counter = counter+1;
+		counter++;
 		session.setAttribute("row_counter", counter);		
 	}
-	
-	public void increase_column_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		HttpSession session = request.getSession();
+
+    /**
+     * Increments column offset by one and resets it as a session variable.
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+	public void increaseColumnOffset(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+	    HttpSession session = request.getSession();
 		int counter = 0;
+
 		if (session.getAttribute("column_counter") != null) {
 			counter = (Integer) session.getAttribute("column_counter");
 		}
 
 		counter++;
-		session.setAttribute("column_counter", counter);		
+		session.setAttribute("column_counter", counter);
 	}
-	
-	public void reset_offset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		HttpSession session = request.getSession();
+
+    /**
+     * Resets session variables row and column offsets to 0.
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+	public void resetOffset(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+	    HttpSession session = request.getSession();
 		session.setAttribute("row_counter", 0);
 		session.setAttribute("column_counter", 0);
-	
 	}
 	
-	public void filterbyCustomer(HttpServletRequest request, HttpServletResponse response){
+	public void filterbyCustomer(HttpServletRequest request, HttpServletResponse response) {
 		
 		// Get session variables.
 		HttpSession session = request.getSession();
@@ -85,7 +110,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		List<String> customers = new ArrayList<String>();
 		Map<String, Integer> totalSales = new HashMap<>();
 
-		//maps customer_name to hashmap of (key:product name, value: purchases)
+		//maps customer_name to hashmap of (getKey:product name, getValue: purchases)
 		HashMap< String, Map <String,Integer>> totalsales_per_customer = new HashMap<>();
 			
 		PersonDAO person = new PersonDAO(ConnectionManager.getConnection());
@@ -137,10 +162,9 @@ public class SalesAnalyticsController extends HttpServlet {
 		request.setAttribute("col_values",products);
 		request.setAttribute("cell_values", totalsales_per_customer);
 		request.setAttribute("totalSales", totalSales);
-
 	}
 	
-	public void filterbyState(HttpServletRequest request, HttpServletResponse response){
+	public void filterbyState(HttpServletRequest request, HttpServletResponse response) {
 		
 		HttpSession session = request.getSession();
 		String sales_filter_option = (String) session.getAttribute("filter");
@@ -205,7 +229,6 @@ public class SalesAnalyticsController extends HttpServlet {
 	}
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
 		response.getWriter().append("Served at: ").append(request.getContextPath());
 	}
 
@@ -235,17 +258,17 @@ public class SalesAnalyticsController extends HttpServlet {
 			session.removeAttribute("filter");
 			session.removeAttribute("hideNextRowsBtn");
 			session.removeAttribute("hideNextColsBtn");
-			reset_offset(request, response);
+			resetOffset(request, response);
 		}
 		
 		else {
 			// Increase either row or column offset.
 			if (action.equalsIgnoreCase("Next 20 Rows")) {
-				increase_row_offset(request, response);
+				increaseRowOffset(request, response);
 			}
 
 			else if (action.equalsIgnoreCase("Next 10 Columns")) {
-				increase_column_offset(request, response);
+				increaseColumnOffset(request, response);
 			}
 
 			// Filter by customer or state.

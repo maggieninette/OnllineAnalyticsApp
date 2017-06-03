@@ -1,23 +1,21 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.sql.Connection, ucsd.shoppingApp.ConnectionManager, ucsd.shoppingApp.*"%>
 <%@ page import="ucsd.shoppingApp.models.* , java.util.*" %>    
-<%@ taglib prefix = "c" uri = "http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%
-	List<String> row_vals = new ArrayList<>();
-	List<String> col_vals = new ArrayList<>();
-	HashMap<String, Map <String,Integer>> cell_vals = new HashMap<>();	
+	List<String> rowVals = new ArrayList<>();
+	List<String> colVals = new ArrayList<>();
+	HashMap<String, Map<String,Integer>> cellVals = new HashMap<>();
 	Map<String, Integer> totalSales = new HashMap<>();
 
-	if (request.getAttribute("row_values") != null ||
-		request.getAttribute("col_values") != null ||
-		request.getAttribute("cell_values") != null ||
-		request.getAttribute("totalSales") != null) {
+	if (request.getAttribute("row_values") != null || request.getAttribute("col_values") != null ||
+		request.getAttribute("cell_values") != null || request.getAttribute("totalSales") != null) {
 
 		// Get request attributes to build table.
-		row_vals = (List<String>) request.getAttribute("row_values"); 
-		col_vals = (List<String>) request.getAttribute("col_values");
-		cell_vals = (HashMap<String, Map <String,Integer>>) request.getAttribute("cell_values");
+		rowVals = (List<String>) request.getAttribute("row_values");
+		colVals = (List<String>) request.getAttribute("col_values");
+		cellVals = (HashMap<String, Map <String,Integer>>) request.getAttribute("cell_values");
 		totalSales = (Map<String, Integer>) request.getAttribute("totalSales");
 	}
 		
@@ -87,9 +85,9 @@
 			<td></td>
 			<%
 				//setting up the column headers
-				for (int i = 0; i < col_vals.size(); i++) {
+				for (int i = 0; i < colVals.size(); i++) {
 			%>
-			<td><b><%= col_vals.get(i) %></b></td>
+			<td><b><%= colVals.get(i) %></b></td>
 			<%
 				}
 			%>
@@ -100,31 +98,23 @@
 				Map <String, Integer> userSales;
 				int sale = 0;
 	
-				for (int i = 0; i < row_vals.size(); i++) {
+				for (int i = 0; i < rowVals.size(); i++) {
 
 				String user;
-				user = row_vals.get(i);
+				user = rowVals.get(i);
 		
-				userSales = cell_vals.get(user);
-				//display the user name/state (row value) and total purchases made
+				userSales = cellVals.get(user);
+				//display the user name/state (row getValue) and total purchases made
 			%>
 			<td><b><%= user + " (" + Integer.toString(totalSales.get(user)) + ")" %></b></td>
 			<% 
 				//loop through col vals to output cell values in correct order
-				for (int j = 0; j < col_vals.size(); j++) {
+				for (int j = 0; j < colVals.size(); j++) {
 					String temp;
-					temp = col_vals.get(j);
-				
-					//System.out.println(user);
+					temp = colVals.get(j);
+
 					if (userSales.get(temp) != null) {
-						
-			
 						sale = userSales.get(temp);
-						
-						if(user.equals("Wisconsin")){
-							
-							System.out.println("(in jsp). product: "+temp+", total sale: "+Integer.toString(sale));
-						}
 					}
 			%>
 			<td><%= sale %></td>

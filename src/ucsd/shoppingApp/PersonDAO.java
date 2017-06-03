@@ -289,7 +289,7 @@ public class PersonDAO {
 	
 	
 	/*
-	 * Returns the map which maps a user to a mapping of (key: product, value: total purchase),
+	 * Returns the map which maps a user to a mapping of (getKey: product, getValue: total purchase),
 	 * so we can find out how much money the user spent in total for each product.
 	 */
 	public HashMap<String, Map <String,Integer>> getCustomerMapping(List<String> customers, int offset){
@@ -489,7 +489,7 @@ public class PersonDAO {
 		    
 		    // now put it into the customersTopK list. Start from the end of the customerTotalPairs...
 		    for (int j = sortedCustomerTotalPairs.size() - 1; j >= 0; j--) {
-		    	customersTopKSorted.add(sortedCustomerTotalPairs.get(j).key());
+		    	customersTopKSorted.add(sortedCustomerTotalPairs.get(j).getKey());
 		    }
 		}
 		catch (SQLException e) {

@@ -37,7 +37,7 @@
 						<%}%>
 						<form action="ProductController" method="get" >
 							
-								<!-- Product Id: <input type="text" name="prod_id" value="${prod_id}" /> -->
+								<!-- Product Id: <input type="text" name="prod_getValuealue="${prod_id}" /> -->
 								Search by name: <input type="text" name="match_prod_name" value="<%= (request.getAttribute("match_prod_name")==null)? "" : request.getAttribute("match_prod_name").toString() %>" />
 								</br>
 								<label>

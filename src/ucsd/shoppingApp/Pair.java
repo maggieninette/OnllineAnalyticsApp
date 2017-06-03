@@ -10,85 +10,75 @@ import java.util.Map;
 
 import ucsd.shoppingApp.Pair;
 
-public class Pair
-{
+public class Pair {
+
     private String key;
     private int value;
-    
     private String product1;
     private String product2;
-
-    public Pair(String aKey, int aValue)
-    {
-        key   = aKey;
-        value = aValue;
-    }
-    
-    public Pair(String aProduct1, String aProduct2){
-    	
-    	product1= aProduct1;
-    	product2 = aProduct2;
-    	
-    }
-    
     private Pair productsPair;
     private BigDecimal cosineSimilarity;
 
-    public Pair (Pair products, BigDecimal cosine){
-    	productsPair = products;
-    	cosineSimilarity = cosine;
+    public Pair(String key, int value) {
+        this.key   = key;
+        this.value = value;
     }
     
+    public Pair(String product1, String roduct2) {
+    	this.product1= product1;
+    	this.product2 = product2;
+    }
+
+    public Pair(Pair products, BigDecimal cosineSimilarity) {
+    	this.productsPair = products;
+    	this.cosineSimilarity = cosineSimilarity;
+    }
+
+    //getKey is the name (customer/state), getValue is total sales
+    public String getKey() {
+        return key;
+    }
+    public int getValue() {
+        return value;
+    }
     
-    //key is the name (customer/state), value is total sales
-    public String key()   { return key; }
-    public int value() { return value; } 
+    public String getProduct1() {
+        return product1;
+    }
+
+    public String getProduct2() {
+        return product2;
+    }
     
-    public String getProduct1() { return product1; }
-    public String getProduct2() { return product2; }
-    
-    public Pair getPair() { return productsPair; }
-    public BigDecimal getCosine() {return cosineSimilarity; }
-    
-    
-   /* 
-    public static Pair[] bubbleSort(Pair[] arr) {
-    	System.out.println("in bubble sort");
-    	int n = arr.length;  
-        Pair temp;  
-         for(int i=0; i < n; i++){  
-                 for(int j=1; j < (n-i); j++){  
-                          if(arr[j-1].value > arr[j].value){ 
-                                 //swap elements  
-                                 temp = arr[j-1];  
-                                 arr[j-1] = arr[j];  
-                                 arr[j] = temp;  
-                         }                 
-                 }  
-         }
-         return arr;
-    }*/
-    
-    
+    public Pair getPair() {
+        return productsPair;
+    }
+
+    public BigDecimal getCosineSimilarity() {
+        return cosineSimilarity;
+    }
+
     public static ArrayList<Pair> bubbleSort(ArrayList<Pair> arr) {
 
-    	int n = arr.size();  
-        Pair temp;  
-         for(int i=0; i < n; i++){  
-                 for(int j=1; j < (n-i); j++){  
-                          if(arr.get(j-1).value > arr.get(j).value){ 
-                                 //swap elements  
-                                 temp = arr.get(j-1);  
-                                 arr.set(j-1, arr.get(j)); 
-                                 arr.set(j, temp);  
-                         }                 
-                 }  
-         }
-         return arr;
+        int n = arr.size();
+        Pair temp;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 1; j < (n - i); j++) {
+                if (arr.get(j - 1).value > arr.get(j).value) {
+                    temp = arr.get(j - 1);
+                    arr.set(j - 1, arr.get(j));
+                    arr.set(j, temp);
+                }
+            }
+        }
+
+        return arr;
     }   
     
     public static <K, V extends Comparable<? super V>> Map<K, V> sortMap(final Map<K, V> mapToSort) {
-		List<Map.Entry<K, V>> entries = new ArrayList<Map.Entry<K, V>>(mapToSort.size());
+
+        List<Map.Entry<K, V>> entries = new ArrayList<Map.Entry<K, V>>(mapToSort.size());
  
 		entries.addAll(mapToSort.entrySet());
  
@@ -110,8 +100,5 @@ public class Pair
  
 		return sortedCosinePairs;
 	}
-    
-    
+
 }
-
-

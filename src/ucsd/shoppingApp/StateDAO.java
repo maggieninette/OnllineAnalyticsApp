@@ -127,7 +127,7 @@ public class StateDAO {
 	}
 	
 	/*
-	 * This function returns a mapping of state name to a hashmap that maps (key: state name, value: total sale).
+	 * This function returns a mapping of state name to a hashmap that maps (getKey: state name, getValue: total sale).
 	 * this way, we can find out the amount of sales made for a given product, per State.
 	 */
 
@@ -384,7 +384,7 @@ public class StateDAO {
 		    
 		    // now put it into the statesTopK list. Start from the end of the stateTotalPairs...
 		    for (int j = sortedStateTotalPairs.size() - 1; j >= 0; j--) {
-		    	statesTopKSorted.add(sortedStateTotalPairs.get(j).key());
+		    	statesTopKSorted.add(sortedStateTotalPairs.get(j).getKey());
 		    }
 		}
 		catch (SQLException e) {
