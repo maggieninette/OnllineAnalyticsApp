@@ -71,7 +71,7 @@ public class Pair
     
     
     public static ArrayList<Pair> bubbleSort(ArrayList<Pair> arr) {
-    	System.out.println("in bubble sort");
+
     	int n = arr.size();  
         Pair temp;  
          for(int i=0; i < n; i++){  

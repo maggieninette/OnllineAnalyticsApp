@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import ucsd.shoppingApp.models.ProductModel;
 import ucsd.shoppingApp.models.ProductModelExtended;
@@ -656,7 +657,7 @@ public class ProductDAO {
 		
 		
 		HashMap<String,BigDecimal> cosineSimilarityMap = new HashMap<>();
-		 MathContext mc = new MathContext(4);
+		 MathContext mc = new MathContext(10);
 		
 
 		Map<String,Integer> otherProductVector;
@@ -697,7 +698,7 @@ public class ProductDAO {
 				    
 				    //If it equals to 0 then, don't divide.
 				    
-				    //System.out.println("Accuumulator: "+accumulator+" , "+totalSaleGivenProduct+" , "+totalSaleOtherProduct);
+				    System.out.println("Accuumulator: "+accumulator+" , "+totalSaleGivenProduct+" , "+totalSaleOtherProduct);
 				    
 				    BigDecimal divideBy = totalSaleGivenProduct.multiply(totalSaleOtherProduct,mc);
 				    if (divideBy.compareTo(new BigDecimal(0))==1){
@@ -731,8 +732,8 @@ public class ProductDAO {
 														HashMap<String,Integer> totalSalesPerProduct,
 														List<String> allProducts){
 		
-
-		Map<Pair,BigDecimal> sortedPairs = getCosineSimilarityMapAllProducts(productVectors,
+		Map<Pair,BigDecimal> sortedPairs = new TreeMap<>();
+		sortedPairs = getCosineSimilarityMapAllProducts(productVectors,
 														totalSalesPerProduct, allProducts);
 		
 		
@@ -742,8 +743,8 @@ public class ProductDAO {
 		
 		int i = 0;
 		int lastIndex = 0;
-		int counter = 1;
-		for (Map.Entry<Pair, BigDecimal> entry : sortedPairs.entrySet() ) {
+
+		/*for (Map.Entry<Pair, BigDecimal> entry : sortedPairs.entrySet() ) {
 	
 			Pair productPair = entry.getKey();
 			BigDecimal cosine = entry.getValue();
@@ -763,6 +764,8 @@ public class ProductDAO {
 			counter++;
 		}
 		
+		
+		
 		for (int j = lastIndex; j >=0; j--){
 
 			Pair wrapper = arr[j];
@@ -770,6 +773,23 @@ public class ProductDAO {
 			System.out.println("(descending) : "+wrapper.getCosine());
 			sortedPairsDescending.put(wrapper.getPair(), wrapper.getCosine());
 		
+		}*/
+		int counter = 1;
+		ArrayList<Pair> keys = new ArrayList<Pair>(sortedPairs.keySet());
+		for(int j=keys.size()-1; j>=0;j--){
+			System.out.println("here");
+			Pair productPair = keys.get(j);
+			BigDecimal cosine = sortedPairs.get(productPair);
+		
+
+
+			sortedPairsDescending.put(productPair, cosine);
+			
+			if (counter ==100){
+				break;
+			}
+		
+			counter++;
 		}
 		
 			
