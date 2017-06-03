@@ -1,8 +1,3 @@
-/**
- * 
- */
-/* form from sales analytics page will trigger this function */
-
 $(document).read(function(){
 	$('#analyzeSales').submit(function(){
 		
@@ -19,5 +14,4 @@ $(document).read(function(){
 		});
 		return false;
 	});
-	
 });

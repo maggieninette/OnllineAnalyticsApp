@@ -170,10 +170,10 @@ public class SalesAnalyticsController extends HttpServlet {
 			//we need to see if a sales filter has been applied, but we will do that in the StateDAO class
 			//when we build the list of states sorted according to total purchases made...
 			
-			states = StateDAO.getStatesTopKlist(sales_filter_option,(int) session.getAttribute("row_counter"));	
+			states = StateDAO.getStatesTopKList(sales_filter_option,(int) session.getAttribute("row_counter"));
 
 			// Check if next rows button should be displayed.
-			if (StateDAO.getStatesTopKlist(sales_filter_option, ((int) session.getAttribute("row_counter") + 1)).isEmpty())
+			if (StateDAO.getStatesTopKList(sales_filter_option, ((int) session.getAttribute("row_counter") + 1)).isEmpty())
 				session.setAttribute("hideNextRowsBtn", true);
 		
 		}
