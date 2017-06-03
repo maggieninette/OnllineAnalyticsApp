@@ -55,6 +55,7 @@ for (Map.Entry<Pair,BigDecimal> entry : sortedPairs.entrySet()) {
 		
 		String product1 = tmp.getProduct1();
 		String product2 = tmp.getProduct2();
+		System.out.println("(in jsp): "+cosine);
 		
 		%>
 		<td><%=product1 %> </td>

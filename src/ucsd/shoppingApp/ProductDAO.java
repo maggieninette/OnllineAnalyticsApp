@@ -576,9 +576,8 @@ public class ProductDAO {
 				    
 				    //The hashmap (key:product, value: totalpurchase) for that specific customer.
 				    Map<String,Integer> customerPurchaseMap = entry.getValue();
-				    
 
-				    
+
 				    int totalPurchaseMadeByCustomer = customerPurchaseMap.get(productName);
 				    
 				    //System.out.println("customer: "+customerName+" spent "+Integer.toString(totalPurchaseMadeByCustomer)+" on "+productName);
@@ -687,8 +686,8 @@ public class ProductDAO {
 				    	BigDecimal otherProductTotal = new BigDecimal (otherProductVector.get(customer));
 				    	BigDecimal givenProductTotal = new BigDecimal (givenProductVector.get(customer));
 				    	
-				    	BigDecimal tmp = otherProductTotal.multiply(givenProductTotal);
-				    	accumulator = accumulator.add(tmp);   
+				    	BigDecimal tmp = otherProductTotal.multiply(givenProductTotal,mc);
+				    	accumulator = accumulator.add(tmp,mc);   
 				    	
 				    }
 				  //Now divide by (totalSales of givenProduct * totalSales of otherProduct)
@@ -707,7 +706,7 @@ public class ProductDAO {
 				    }
 				    
 	
-				    System.out.println("cosine similarity between "+product1+ " and "+otherProduct+ " is "+cosineSimilarity.toString());
+				    //System.out.println("cosine similarity between "+product1+ " and "+otherProduct+ " is "+cosineSimilarity.toString());
 				    cosineSimilarityMap.put(otherProduct, cosineSimilarity);
 				    
 				    
@@ -742,32 +741,39 @@ public class ProductDAO {
 		Pair[] arr = new Pair[100];
 		
 		int i = 0;
+		int lastIndex = 0;
+		int counter = 1;
 		for (Map.Entry<Pair, BigDecimal> entry : sortedPairs.entrySet() ) {
 	
 			Pair productPair = entry.getKey();
 			BigDecimal cosine = entry.getValue();
-			Pair wrapped = new Pair (productPair,cosine);
-
-			arr[i] = wrapped;
-			System.out.println(arr[i].getPair().getProduct1());
-			i++;
 			
+
+			Pair wrapped = new Pair (productPair,cosine);
+			
+			arr[i] = wrapped;
+			System.out.println("(sorted) " + cosine);
+			
+			lastIndex = i;
+			i++;
+			if (counter ==100){
+				break;
+			}
+			
+			counter++;
 		}
 		
-	/*	for (int j = (arr.length)-1; j >=0; j--){
-			System.out.println("test");
+		for (int j = lastIndex; j >=0; j--){
+
 			Pair wrapper = arr[j];
-			BigDecimal cosineTmp = wrapper.getCosine();
 
-
-
-			sortedPairsDescending.put(tmp.getPair(), tmp.getCosine());
+			System.out.println("(descending) : "+wrapper.getCosine());
+			sortedPairsDescending.put(wrapper.getPair(), wrapper.getCosine());
 		
-		}*/
+		}
 		
-		
-		
-		return sortedPairs;
+			
+		return sortedPairsDescending;
 		
 		
 		

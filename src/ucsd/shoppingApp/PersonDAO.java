@@ -41,6 +41,20 @@ public class PersonDAO {
                     "ORDER BY p.id " +
                     "LIMIT 10 " +
                     "OFFSET 10 * ?";
+	
+	public static final String BUILD_TABLE_SQL2 =
+			"SELECT p.id, COALESCE(SUM(pr.price * pr.quantity), 0) " +
+            "FROM product p LEFT OUTER JOIN products_in_cart pr " +
+            "ON p.id = pr.product_id " +
+            "AND pr.cart_id IN " +
+            "      (SELECT s.id " +
+            "      FROM shopping_cart s, person p " +
+            "      WHERE s.person_id = p.id " +
+            "	   AND p.person_name = ? " +
+            "      AND s.is_purchased = true) " +
+            "GROUP BY p.id " +
+            "ORDER BY p.id " ;
+
 			
 			/*
 			"SELECT product.id, COALESCE(SUM(quant * price), 0) AS grandtotal " +
@@ -206,6 +220,74 @@ public class PersonDAO {
 		return id;
 	}
 	
+	
+	
+	public HashMap<String, Map <String,Integer>> getCustomerMappingAllProducts(List<String> customers){
+		
+		HashMap<String, Map <String,Integer>> totalsales_per_customer = new HashMap<>();
+		HashMap<Integer,String> product_mapping = new HashMap<>();
+		
+		PreparedStatement ptst = null;
+		ResultSet rs = null;
+		ResultSet rc = null;
+		try {
+			Statement statement = ConnectionManager.getConnection().createStatement();
+		
+			String customer;
+			for (int i =0; i < customers.size(); i++) {
+				HashMap<String, Integer> grandTotal = new HashMap<>();
+				customer = customers.get(i);
+				ptst = con.prepareStatement(BUILD_TABLE_SQL2);
+				ptst.setString(1, customer);
+
+					
+				//rs is for getting the table for each customer (how much money spent on each product)
+				rs = ptst.executeQuery();
+				rc = statement.executeQuery("select * from product");
+
+				//getting mapping from product id to product name
+				while (rc.next()) {
+					product_mapping.put(rc.getInt(1), rc.getString(3));						
+				}
+		
+				int product_id;
+				String product_name;
+				while (rs.next()) {
+
+					product_id = rs.getInt(1);							
+					product_name = product_mapping.get(product_id);
+
+					//so in grandTotal, we can look up how much money was spent on each
+					//product by name (each customer has a grandTotal map.
+					grandTotal.put(product_name, rs.getInt(2));
+
+				}
+
+				totalsales_per_customer.put(customer,grandTotal);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (ptst != null) {
+					ptst.close();
+				}
+				if (rc != null) {
+					rs.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return totalsales_per_customer;
+	}
+	
+	
 	/*
 	 * Returns the map which maps a user to a mapping of (key: product, value: total purchase),
 	 * so we can find out how much money the user spent in total for each product.
@@ -313,7 +395,7 @@ public class PersonDAO {
 	public Map<String,Integer> getTotalPurchasesAllProducts(List<String> customers) {
 		Map<String,Integer> totalSalesPerCustomer = new HashMap<>();
 
-		HashMap<String, Map <String,Integer>> customerMapping = getCustomerMapping(customers, 0);
+		HashMap<String, Map <String,Integer>> customerMapping = getCustomerMappingAllProducts(customers);
 		
 		//customerMapping is a hashmap that maps user to a hashmap of product names, and total purchase for that product.
 		//so, for each customer's hashmap, we sum up the purchases...
@@ -338,7 +420,7 @@ public class PersonDAO {
 	public Map<String,Integer> getTotalPurchasesPerCategory(List<String> customers, String category){
 		Map<String,Integer> totalSalesPerCustomer = new HashMap<>();
 
-		HashMap<String, Map <String,Integer>> customerMapping = getCustomerMapping(customers, 0);
+		HashMap<String, Map <String,Integer>> customerMapping = getCustomerMappingAllProducts(customers);
 		
 		//customerMapping is a hashmap that maps user to a hashmap of product names, and total purchase for that product.
 		//so, for each customer's hashmap, we sum up the purchases ONLY for products belonging in

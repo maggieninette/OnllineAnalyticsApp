@@ -34,6 +34,21 @@ public class StateDAO {
 			"OFFSET 10 * ?";
 	
 	
+	private static final String BUILD_TABLE_SQL_allproducts = 
+			"SELECT p.id, COALESCE(SUM(pr.price * pr.quantity), 0) " +
+			"FROM product p LEFT OUTER JOIN products_in_cart pr " +
+			"ON p.id = pr.product_id " +
+			"AND pr.cart_id IN " +
+			"    (SELECT s.id " +
+			"    FROM shopping_cart s, person pr, state st " +
+			"    WHERE s.person_id = pr.id " +
+			"		AND pr.state_id = st.id " +
+			"		AND st.state_name = ? " +
+			"    AND s.is_purchased = true) " +
+			"GROUP BY p.id " +
+			"ORDER BY p.id ";
+	
+	
 	public static final String BUILD_TABLE_SQL2 =
 			"select product_name,product.id, coalesce(sum (quant*price),0) as grandtotal "+
 			"from product left outer join "+ 
@@ -210,11 +225,95 @@ public class StateDAO {
 	
 	}
 	
+	
+	
+	public static HashMap<String, Map <String,Integer>> getStateMappingAllProducts(List<String> states) {
+		
+		HashMap<String, Map <String,Integer>> totalsales_per_state = new HashMap<>();
+		HashMap<Integer,String> product_mapping = new HashMap<>();
+
+		PreparedStatement ptst = null;
+		ResultSet rs = null;
+		ResultSet rc = null;
+		try {
+
+			Connection conn = ConnectionManager.getConnection();
+			Statement statement = conn.createStatement();
+
+		
+			String state;
+			for (int i =0; i < states.size(); i++) {
+				HashMap<String, Integer> grandTotal = new HashMap<>();
+				state = states.get(i);
+
+				ptst = conn.prepareStatement(BUILD_TABLE_SQL_allproducts);
+				ptst.setString(1, state);
+
+					
+				//rs is for getting the table for each state (how much money spent on each product)
+				rs = ptst.executeQuery();
+				rc = statement.executeQuery("select * from product");
+
+				//getting mapping from product id to product name
+				while (rc.next()){
+					product_mapping.put(rc.getInt(1), rc.getString(3));						
+				}
+		
+				int product_id;
+				String product_name;
+				while (rs.next()){
+
+					product_id = rs.getInt(1);							
+					product_name = product_mapping.get(product_id);
+
+					//so in grandTotal, we can look up how much money was spent on each
+					//product by name (each customer has a grandTotal map.
+					grandTotal.put(product_name, rs.getInt(2));
+					
+					//System.out.println(state+" , "+product_name+" , "+Integer.toString(rs.getInt(2)));
+					/*if (state.equals("Wisconsin") ){
+						System.out.println("product: "+product_name+", total: "+Integer.toString(rs.getInt(2)));
+						
+					}*/
+					
+
+				}
+
+				totalsales_per_state.put(state,grandTotal);
+				
+			}
+
+		}catch(Exception e) {
+			e.printStackTrace();
+		}finally {
+			try {
+				if(rs != null) {
+					rs.close();
+				}
+				if(ptst != null) {
+					ptst.close();
+				}
+				if(rc != null) {
+					rs.close();
+				}
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		
+		return totalsales_per_state;
+	
+	}
+	
+	
+	
+	
 	//returns a mapping of state name to total purchases made across ALL products
 	public static Map<String,Integer> getTotalPurchasesAllProducts(List<String> states) {
 		Map<String,Integer> totalSalesPerState = new HashMap<>();
 
-		HashMap<String, Map <String,Integer>> stateMapping = getStateMapping(states, 0);
+		HashMap<String, Map <String,Integer>> stateMapping = getStateMappingAllProducts(states);
 		
 		//customerMapping is a hashmap that maps state to a hashmap of product names, and total purchase for that product.
 		//so, for each state's hashmap, we sum up the purchases...
@@ -243,7 +342,7 @@ public class StateDAO {
 	public static Map<String,Integer> getTotalPurchasesPerCategory(List<String> states, String category) {
 		Map<String,Integer> totalSalesPerState = new HashMap<>();
 
-		HashMap<String, Map <String,Integer>> stateMapping = getStateMapping(states, 0);
+		HashMap<String, Map <String,Integer>> stateMapping = getStateMappingAllProducts(states);
 		
 		//customerMapping is a hashmap that maps user to a hashmap of product names, and total purchase for that product.
 		//so, for each customer's hashmap, we sum up the purchases ONLY for products belonging in

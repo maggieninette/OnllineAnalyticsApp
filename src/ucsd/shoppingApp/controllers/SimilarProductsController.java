@@ -45,7 +45,7 @@ public class SimilarProductsController extends HttpServlet {
     	List<String> allCustomers = person.getAllCustomers();
     	
     	//maps customer to a map (key:product name, value: total purchase)
-    	HashMap<String, Map <String,Integer>> customerMapping = person.getCustomerMapping(allCustomers,0);
+    	HashMap<String, Map <String,Integer>> customerMapping = person.getCustomerMappingAllProducts(allCustomers);
     	
     	//Get the product vectors
     	Map<String, Map<String,Integer>> productVectors = product.getVector(customerMapping);

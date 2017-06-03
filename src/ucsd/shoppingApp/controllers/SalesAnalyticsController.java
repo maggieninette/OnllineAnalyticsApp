@@ -121,8 +121,9 @@ public class SalesAnalyticsController extends HttpServlet {
 		}
 
 		//get Map<product id, total sale> for every customer/state and put it in the list. 
-		totalsales_per_customer = person.getCustomerMapping(customers, (int)session.getAttribute("column_counter"));
-
+		//totalsales_per_customer = person.getCustomerMapping(customers, (int)session.getAttribute("column_counter"));
+		totalsales_per_customer = person.getCustomerMappingAllProducts(customers);//, (int)session.getAttribute("column_counter"));
+		
 		//get column values (product names) depending on the filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
 		products = product.filterProductbyCategory(sales_filter_option,(int)session.getAttribute("column_counter"));
@@ -185,8 +186,10 @@ public class SalesAnalyticsController extends HttpServlet {
 		}
 
 		//get Map<product id, total sale> for every customer/state and put it in the list. 
-		totalsales_per_state = StateDAO.getStateMapping(states, (int) session.getAttribute("column_counter"));
-
+		//totalsales_per_state = StateDAO.getStateMapping(states, (int) session.getAttribute("column_counter"));
+		totalsales_per_state = StateDAO.getStateMappingAllProducts(states);//, (int) session.getAttribute("column_counter"));
+		
+		
 		//get column values (product names) depending on the filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
 		products = product.filterProductbyCategory(sales_filter_option,(int)session.getAttribute("column_counter"));
