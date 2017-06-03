@@ -16,13 +16,6 @@ public class StateDAO {
             "SELECT id, state_name " +
             "FROM state " +
             "ORDER BY state_name";
-	
-	private static final String GET_STATES_ORDERED_SQL =
-            "SELECT id, state_name " +
-            "FROM state " +
-            "ORDER BY UPPER(state_name) " +
-            "LIMIT 20 " +
-            "OFFSET 20 * ?";
 
 	private static final String BUILD_TABLE_SQL = 
 			"SELECT p.id, COALESCE(SUM(pr.price * pr.quantity), 0) " +
@@ -37,8 +30,8 @@ public class StateDAO {
 			"    AND s.is_purchased = true) " +
 			"GROUP BY p.id " +
 			"ORDER BY p.id " +
-			"LIMIT 10 " +
-			"OFFSET 10 * ?";
+			"LIMIT 50 " +
+			"OFFSET 50 * ?";
 	
 	private static final String BUILD_TABLE_SQL_NO_OFFSET =
 			"SELECT p.id, COALESCE(SUM(pr.price * pr.quantity), 0) " +
@@ -80,44 +73,6 @@ public class StateDAO {
 				}
 				if (stmt != null) {
 					stmt.close();
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		return states;
-	}
-
-    /**
-     * Returns states using offset.
-     * @param offset
-     * @return
-     */
-	public static ArrayList<String> getStatesOffset(int offset) {
-		
-		ArrayList<String> states = new ArrayList<>();
-		PreparedStatement pstmt = null;
-		ResultSet rs = null;
-
-		try {
-			Connection con = ConnectionManager.getConnection();
-			pstmt = con.prepareStatement(GET_STATES_ORDERED_SQL);
-			pstmt.setInt(1, offset);
-			
-			rs = pstmt.executeQuery();
-
-			while (rs.next()) {
-				states.add(rs.getString("state_name"));
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (rs != null) {
-					rs.close();
-				}
-				if (pstmt != null) {
-					pstmt.close();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -412,24 +367,17 @@ public class StateDAO {
     /**
      * Calls buildCustomersTopKList and gets 20 customers at a time.
      * @param filter
-     * @param listOffset
      * @return
      */
-	public static List<String> getStatesTopKList(String filter, int listOffset) {
+	public static List<String> getStatesTopKList(String filter) {
 		
 		List<String> statesTopK = new ArrayList<>();
 		List<String> allStatesTopKSorted = buildStatesTopKList(filter);
 		
 		// Start getting names from the all_customers_topk_sorted list starting from listOffset * 20.
-		int counter = 1;
-		for (int i = listOffset * 20; i < allStatesTopKSorted.size(); i++ ) {
+		for (int i = 0; i < allStatesTopKSorted.size(); i++ ) {
 			String state = allStatesTopKSorted.get(i);
 			statesTopK.add(state);
-
-			if (counter == 20) {
-				break;
-			}
-			counter++;
 		}
 		
 		return statesTopK;

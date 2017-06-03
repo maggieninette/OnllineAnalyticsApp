@@ -41,14 +41,14 @@ public class ProductDAO {
             "WHERE p.category_id = c.id " +
             "AND c.category_name = ? " +
             "ORDER BY product_name " +
-            "LIMIT 10 " +
-            "OFFSET 10 * ?";
+            "LIMIT 50 " +
+            "OFFSET 50 * ?";
 	
 	private static final String SELECT_ALL_PRODUCT_OFFSET =
             "SELECT * " +
             "FROM product " +
-            "LIMIT 10 " +
-            "OFFSET 10 * ?";
+            "LIMIT 50 " +
+            "OFFSET 50 * ?";
 
 	private static final String DELETE_PRODUCT_BY_ID = "DELETE FROM product WHERE id=?";
 	

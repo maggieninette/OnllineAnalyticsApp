@@ -11,17 +11,29 @@ import java.util.List;
 import ucsd.shoppingApp.models.CategoryModel;
 
 public class CategoryDAO {
-	//private static String GET_CATEGORIES_SQL = "SELECT id, category_name, description FROM category ORDER BY modified_date DESC";
-	private static String GET_CATEGORIES_SQL = "SELECT c.id, c.category_name, c.description, count(p.id) count FROM category c LEFT JOIN product p ON p.category_id = c.id "
-			+ " GROUP BY c.id, c.category_name, c.description "
-			+ " ORDER BY c.modified_date DESC";
+
+    private static String GET_CATEGORIES_SQL =
+            "SELECT c.id, c.category_name, c.description, COUNT(p.id) count " +
+            "FROM category c LEFT JOIN product p " +
+            "ON p.category_id = c.id " +
+            "GROUP BY c.id, c.category_name, c.description " +
+            "ORDER BY c.modified_date DESC";
 	private static String ADD_CATEGORIES_SQL = "INSERT INTO category(category_name, description, created_by, modified_by) "
 			+ " VALUES(?, ?, ?, ?)";
 	private static String UPDATE_CATEGORIES_SQL = "UPDATE category SET category_name = ?, description = ?, modified_by = ? WHERE id = ?";
 	private static String DELETE_CATEGORIES_SQL = "DELETE FROM category WHERE id = ?";
 	private static String PRODUCT_EXISTS_SQL = "SELECT id FROM product WHERE category_id = ?";
 
-	private static String GET_CATEGORIES_BY_NAME_SQL = "SELECT id,category_name, description FROM category WHERE category_name= ? ";
+	private static String GET_CATEGORIES_BY_NAME_SQL =
+            "SELECT category_name " +
+            "FROM category " +
+            "WHERE category_name = ? " +
+            "ORDER BY UPPER(category_name) ASC";
+
+    private static String GET_ALL_CATEGORIES_ALPHABETICAL_SQL =
+            "SELECT id, category_name, description " +
+            "FROM category " +
+            "ORDER BY UPPER(category_name) ASC";
 
 	private Connection con;
 
@@ -37,8 +49,9 @@ public class CategoryDAO {
 			stmt = con.createStatement();
 			rs = stmt.executeQuery(GET_CATEGORIES_SQL);
 			while (rs.next()) {
-				CategoryModel c = new CategoryModel(rs.getInt("id"), rs.getString("category_name"),
-						rs.getString("description"), rs.getInt("count"));
+				CategoryModel c = new CategoryModel(
+                        rs.getInt("id"), rs.getString("category_name"),
+                        rs.getString("description"), rs.getInt("count"));
 				categories.add(c);
 			}
 		} catch (Exception e) {
@@ -57,6 +70,38 @@ public class CategoryDAO {
 		}
 		return categories;
 	}
+
+    public List<CategoryModel> getCategoriesAlphabetical() {
+
+	    List<CategoryModel> categories = new ArrayList<CategoryModel>();
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            stmt = con.createStatement();
+            rs = stmt.executeQuery(GET_ALL_CATEGORIES_ALPHABETICAL_SQL);
+            while (rs.next()) {
+                CategoryModel c = new CategoryModel(
+                        rs.getInt("id"), rs.getString("category_name"),
+                        rs.getString("description"));
+                categories.add(c);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return categories;
+    }
 
 	public CategoryModel getCategoriesbyName(String category_name) {
 		CategoryModel category = null;

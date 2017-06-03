@@ -1,0 +1,24 @@
+/*
+a#floating-refresh-link {
+    z-index: 1000;
+    text-align: center;
+    color: gray;
+    background: white;
+    position: fixed;
+    font-size: 18pt;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 60px;
+    padding-top: 15px;
+}
+
+a#floating-refresh-link:hover {
+    color: red;
+    transition: .5s;
+}
+
+a#back-home-link {
+    margin-top: 100px;
+}
+*/

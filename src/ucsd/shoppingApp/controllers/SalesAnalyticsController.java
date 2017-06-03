@@ -2,6 +2,7 @@ package ucsd.shoppingApp.controllers;
 
 import java.io.IOException;
 
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -17,18 +18,16 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import ucsd.shoppingApp.ConnectionManager;
-import ucsd.shoppingApp.PersonDAO;
 import ucsd.shoppingApp.ProductDAO;
 import ucsd.shoppingApp.StateDAO;
 
 @WebServlet("/SalesAnalyticsController")
 public class SalesAnalyticsController extends HttpServlet {
-	private static final long serialVersionUID = 1L;
-       
+
 	private Connection con = null;
 
 	public SalesAnalyticsController() {
-		con = ConnectionManager.getConnection();
+	    con = ConnectionManager.getConnection();
 	}
 
 	public void destroy() {
@@ -39,27 +38,6 @@ public class SalesAnalyticsController extends HttpServlet {
 				e.printStackTrace();
 			}
 		}
-	}
-
-    /**
-     * Increments row offset by one and resets it as a session variable.
-     * @param request
-     * @param response
-     * @throws ServletException
-     * @throws IOException
-     */
-	public void increaseRowOffset(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-	    HttpSession session = request.getSession();
-		int counter = 0;
-
-		if (session.getAttribute("row_counter") != null) {
-			counter = (Integer) session.getAttribute("row_counter");
-		}
-
-		counter++;
-		session.setAttribute("row_counter", counter);		
 	}
 
     /**
@@ -79,12 +57,11 @@ public class SalesAnalyticsController extends HttpServlet {
 			counter = (Integer) session.getAttribute("column_counter");
 		}
 
-		counter++;
-		session.setAttribute("column_counter", counter);
+		session.setAttribute("column_counter", ++counter);
 	}
 
     /**
-     * Resets session variables row and column offsets to 0.
+     * Resets session variable for column offset to 0.
      * @param request
      * @param response
      * @throws ServletException
@@ -94,142 +71,55 @@ public class SalesAnalyticsController extends HttpServlet {
             throws ServletException, IOException {
 
 	    HttpSession session = request.getSession();
-		session.setAttribute("row_counter", 0);
 		session.setAttribute("column_counter", 0);
-	}
-	
-	public void filterbyCustomer(HttpServletRequest request, HttpServletResponse response) {
-		
-		// Get session variables.
-		HttpSession session = request.getSession();
-		String sales_filter_option = (String) session.getAttribute("filter");	
-		String order_option = (String) session.getAttribute("order");
-		
-		// Initializing data structures to be used.
-		List<String> products = new ArrayList<String>();
-		List<String> customers = new ArrayList<String>();
-		Map<String, Integer> totalSales = new HashMap<>();
-
-		//maps customer_name to hashmap of (getKey:product name, getValue: purchases)
-		HashMap< String, Map <String,Integer>> totalsales_per_customer = new HashMap<>();
-			
-		PersonDAO person = new PersonDAO(ConnectionManager.getConnection());
-		
-		//filling in row values list with customer names.
-		
-		//first, check if it's ordered by alphabetical or top-k.
-		if (order_option.equals("alphabetical")) {
-			customers = person.getNames((int)session.getAttribute("row_counter"));
-			
-			// Check if next rows button should be displayed.
-			if (person.getNames((int) session.getAttribute("row_counter") + 1).isEmpty())
-				session.setAttribute("hideNextRowsBtn", true);
-		}
-		else { //do the top-k ordering.
-			
-			//we need to see if a sales filter has been applied, but we will do that in the PersonDAO class
-			//when we build the list of customers sorted according to total purchases made...
-			
-			customers = person.getCustomersTopKlist(sales_filter_option,(int) session.getAttribute("row_counter"));	
-			
-			// Check if next rows button should be displayed.
-			if (person.getCustomersTopKlist(sales_filter_option, ((int) session.getAttribute("row_counter") + 1)).isEmpty())
-				session.setAttribute("hideNextRowsBtn", true);
-		}
-		
-		//getting the mapping of user to the total money they spent in purchases.
-		if (sales_filter_option.equals("all_products")) {
-			totalSales = person.getTotalPurchasesAllProducts(customers);
-		}
-		else {
-			totalSales = person.getTotalPurchasesPerCategory(customers, sales_filter_option);
-		}
-
-		//get Map<product id, total sale> for every customer/state and put it in the list. 
-		//totalsales_per_customer = person.getCustomerMapping(customers, (int)session.getAttribute("column_counter"));
-		totalsales_per_customer = person.getCustomerMappingAllProducts(customers);//, (int)session.getAttribute("column_counter"));
-		
-		//get column values (product names) depending on the filter selected.
-		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
-		products = product.filterProductbyCategory(sales_filter_option,(int)session.getAttribute("column_counter"));
-		
-		// Check if next columns button should be displayed.
-		if (product.filterProductbyCategory(sales_filter_option, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
-			session.setAttribute("hideNextColsBtn", true);
-				
-		// Set table session variables.
-		request.setAttribute("row_values",customers);
-		request.setAttribute("col_values",products);
-		request.setAttribute("cell_values", totalsales_per_customer);
-		request.setAttribute("totalSales", totalSales);
 	}
 	
 	public void filterbyState(HttpServletRequest request, HttpServletResponse response) {
 		
 		HttpSession session = request.getSession();
-		String sales_filter_option = (String) session.getAttribute("filter");
-		String order_option = (String) session.getAttribute("order");
-		
-		//setting up the data structures
+		String categoryFilter = (String) session.getAttribute("filter");
+
 		List<String> products = new ArrayList<String>();
 		List<String> states = new ArrayList<String>();
+		Map <String, Integer> totalSales = new HashMap <>();
+        HashMap<String, Map<String, Integer>> totalSalesPerState = new HashMap<>();
 
-		Map <String, Integer> totalSales = new HashMap <>(); //maps customer to total purchases
+        states = StateDAO.getStatesTopKList(categoryFilter);
 
-		//maps state_name to hashmap
-		HashMap< String, Map <String,Integer>> totalsales_per_state = new HashMap<>();
-
-		//filling in row values list with state names.
-		
-		//first, check if it's ordered by alphabetical or top-k.
-		if (order_option.equals("alphabetical")) {
-			states = StateDAO.getStatesOffset((int) session.getAttribute("row_counter"));
-			
-			// Check if next rows button should be displayed.
-			if (StateDAO.getStatesOffset(((int) session.getAttribute("row_counter")) + 1).isEmpty())
-				session.setAttribute("hideNextRowsBtn", true);
-		}
-		else { //do the top-k ordering.
-			
-			//we need to see if a sales filter has been applied, but we will do that in the StateDAO class
-			//when we build the list of states sorted according to total purchases made...
-			
-			states = StateDAO.getStatesTopKList(sales_filter_option,(int) session.getAttribute("row_counter"));
-
-			// Check if next rows button should be displayed.
-			if (StateDAO.getStatesTopKList(sales_filter_option, ((int) session.getAttribute("row_counter") + 1)).isEmpty())
-				session.setAttribute("hideNextRowsBtn", true);
-		
-		}
-		//getting the mapping of state to the total money they spent in purchases.
-		if (sales_filter_option.equals("all_products")){
+        // Get mapping of state to total money they spent in purchases.
+		if (categoryFilter.equals("all_products")) {
 			totalSales = StateDAO.getTotalPurchasesAllProducts(states);
 		}
 		else{
-			totalSales = StateDAO.getTotalPurchasesPerCategory(states, sales_filter_option);
+			totalSales = StateDAO.getTotalPurchasesPerCategory(states, categoryFilter);
 		}
 
-		//get Map<product id, total sale> for every customer/state and put it in the list. 
-		//totalsales_per_state = StateDAO.getStateMapping(states, (int) session.getAttribute("column_counter"));
-		totalsales_per_state = StateDAO.getStateMappingAllProducts(states);//, (int) session.getAttribute("column_counter"));
+		// Get Map<product id, total sale> for every customer/state and put it in the list.
+		totalSalesPerState = StateDAO.getStateMappingAllProducts(states);
 		
-		
-		//get column values (product names) depending on the filter selected.
+		// Get column values (product names) depending on the category filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
-		products = product.filterProductbyCategory(sales_filter_option,(int)session.getAttribute("column_counter"));
+		products = product.filterProductbyCategory(categoryFilter, (int) session.getAttribute("column_counter"));
 		
 		// Check if next columns button should be displayed.
-		if (product.filterProductbyCategory(sales_filter_option, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
+		if (product.filterProductbyCategory(categoryFilter, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
 			session.setAttribute("hideNextColsBtn", true);
 		
-		request.setAttribute("row_values",states);
-		request.setAttribute("col_values",products);
-		request.setAttribute("cell_values", totalsales_per_state);
+		request.setAttribute("row_values", states);
+		request.setAttribute("col_values", products);
+		request.setAttribute("cell_values", totalSalesPerState);
 		request.setAttribute("totalSales", totalSales);
 	}
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+
+        System.out.println("Server received AJAX request.");
+
+        // Send response.
+        response.setContentType("text/html");
+        PrintWriter out = response.getWriter();
+        out.write("sample response text");
+        out.close();
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -237,45 +127,28 @@ public class SalesAnalyticsController extends HttpServlet {
 		String action = request.getParameter("action");
 		
 		HttpSession session = request.getSession();
-		
+
+        // Set filter session variables when run query button clicked.
 		if (action.equals("Run Query")) {
-			
-			// Set filter session variables.
-			session.setAttribute("row", request.getParameter("row"));
-			session.setAttribute("order", request.getParameter("order"));
-			session.setAttribute("filter", request.getParameter("filter"));
-		    session.setAttribute("firsttime", false);
+            session.setAttribute("firstTime", false);
+            session.setAttribute("filter", request.getParameter("category_filter"));
 		}
 
-		// Get row filter session variable.
-		String rowOption = (String) session.getAttribute("row");
-
-		// Reset button clicked so resetting session variables.
+		// Reset button clicked. Reset session variables.
 		if (action.equalsIgnoreCase("Reset")) {
-			session.removeAttribute("firsttime");
-			session.removeAttribute("row");
-			session.removeAttribute("order");
+			session.removeAttribute("firstTime");
 			session.removeAttribute("filter");
-			session.removeAttribute("hideNextRowsBtn");
 			session.removeAttribute("hideNextColsBtn");
 			resetOffset(request, response);
 		}
-		
-		else {
-			// Increase either row or column offset.
-			if (action.equalsIgnoreCase("Next 20 Rows")) {
-				increaseRowOffset(request, response);
-			}
 
-			else if (action.equalsIgnoreCase("Next 10 Columns")) {
+		else {
+
+			if (action.equalsIgnoreCase("Next 50 Columns")) {
 				increaseColumnOffset(request, response);
 			}
 
-			// Filter by customer or state.
-			if (rowOption.equalsIgnoreCase("customer"))
-				filterbyCustomer(request, response);
-			else if (rowOption.equalsIgnoreCase("state"))
-				filterbyState(request, response);
+            filterbyState(request, response);
 		}
 		
 		request.getRequestDispatcher("/salesanalytics.jsp").forward(request, response);

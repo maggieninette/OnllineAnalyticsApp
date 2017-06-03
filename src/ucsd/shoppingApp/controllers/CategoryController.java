@@ -15,13 +15,10 @@ import ucsd.shoppingApp.ConnectionManager;
 import ucsd.shoppingApp.models.CategoryModel;
 
 public class CategoryController extends HttpServlet {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+
+    private CategoryModel category;
 	private Connection con = null;
-	private CategoryModel category = null;
-	
+
 	public void destroy() {
 		if (con != null) {
 			try {

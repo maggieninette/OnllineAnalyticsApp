@@ -18,10 +18,10 @@
 		cellVals = (HashMap<String, Map <String,Integer>>) request.getAttribute("cell_values");
 		totalSales = (Map<String, Integer>) request.getAttribute("totalSales");
 	}
-		
+
 	Connection con = ConnectionManager.getConnection();
 	CategoryDAO categoryDao = new CategoryDAO(con);
-	List<CategoryModel> categoryList = categoryDao.getCategories();
+	List<CategoryModel> categoryList = categoryDao.getCategoriesAlphabetical();
 	con.close();
 %>
 
@@ -30,51 +30,26 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>Sales Analytics</title>
+    <link rel="stylesheet" href="css/salesanalytics.css" />
 </head>
 <body>
-<a href="./home.jsp">Back to Home</a>
+<a id="floating-refresh-link" onclick="refreshTable()">Refresh</a>
+<a id="back-home-link" href="./home.jsp">Back to Home</a>
 <c:choose>
-	<c:when test="${sessionScope.firsttime eq null}">
+	<c:when test="${sessionScope.firstTime eq null}">
 		<form action="SalesAnalyticsController" method="post" >
-			<table>
-				<tr>
-					<td>Row option:</td>
-					<td>
-						<select name="row">
-							<option value="customer">Customer</option>
-							<option value="state">State</option>
-						</select>
-					</td>
-				</tr>
-				<tr>
-					<td>Order option:</td>
-					<td>
-						<select name="order">
-							<option value="alphabetical">Alphabetical</option>
-							<option value="top-k">Top-K</option>
-						</select>
-					</td>
-				</tr>
-				<tr>
-					<td>Sales filtering option:</td>
-					<td>
-						<select name="filter">
-							<option value="all_products">All Products</option>
-							<c:forEach var="category" items="<%= categoryList %>">
-								<option value="${category.categoryName}">${category.categoryName}</option>
-							</c:forEach>
-						</select>
-					</td>
-				</tr>
-			</table>
-			<input type="submit" value="Run Query" name="action" />
+            <h3>Category Filter:</h3>
+            <select name="category_filter">
+                <option value="all_products" selected>All Products</option>
+                <c:forEach var="category" items="<%= categoryList %>">
+                    <option value="${category.categoryName}">${category.categoryName}</option>
+                </c:forEach>
+            </select>
+            <input type="submit" value="Run Query" name="action" />
 		</form>
 	</c:when>
 	<c:otherwise>
 		<form action="SalesAnalyticsController" method="post">
-			<c:if test="${sessionScope.hideNextRowsBtn eq null}">
-				<input type="submit" value="Next 20 Rows" name="action" />
-			</c:if>
 			<c:if test="${sessionScope.hideNextColsBtn eq null}">
 				<input type="submit" value="Next 10 Columns" name="action" />
 			</c:if>
@@ -84,7 +59,7 @@
 		<tr>
 			<td></td>
 			<%
-				//setting up the column headers
+				// Setting up column headers.
 				for (int i = 0; i < colVals.size(); i++) {
 			%>
 			<td><b><%= colVals.get(i) %></b></td>
@@ -94,22 +69,19 @@
 		</tr>
 		<tr>
 			<%
-				//looping through the rows
+				// Loop through rows.
 				Map <String, Integer> userSales;
 				int sale = 0;
 	
 				for (int i = 0; i < rowVals.size(); i++) {
-
-				String user;
-				user = rowVals.get(i);
-		
-				userSales = cellVals.get(user);
-				//display the user name/state (row getValue) and total purchases made
+				    String user;
+				    user = rowVals.get(i);
+				    userSales = cellVals.get(user);
 			%>
 			<td><b><%= user + " (" + Integer.toString(totalSales.get(user)) + ")" %></b></td>
 			<% 
-				//loop through col vals to output cell values in correct order
-				for (int j = 0; j < colVals.size(); j++) {
+				// Loop through columns.
+                for (int j = 0; j < colVals.size(); j++) {
 					String temp;
 					temp = colVals.get(j);
 
@@ -128,5 +100,7 @@
 		</table>
 	</c:otherwise>
 </c:choose>
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/salesanalytics.js"></script>
 </body>
 </html>

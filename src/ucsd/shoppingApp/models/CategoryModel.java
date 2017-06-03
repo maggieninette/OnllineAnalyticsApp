@@ -6,7 +6,7 @@ public class CategoryModel {
 	private String description;
 	private int productCount;
 	
-	public CategoryModel(){
+	public CategoryModel() {
 		
 	}
 	
