@@ -502,7 +502,8 @@ public class ProductDAO {
      * @return
      */
 	public ArrayList<String> getProductsFromCategory(String category) {
-
+		System.out.println("getting products from that category");
+		
 	    ArrayList<String> products = new ArrayList<>();
 		ResultSet rs = null;
 		PreparedStatement ps = null;
@@ -514,7 +515,10 @@ public class ProductDAO {
 			rs = ps.executeQuery();
 			
 			while (rs.next()) {
-				products.add(rs.getString("product_name"));
+				
+				String productName = rs.getString("product_name");
+				products.add(productName);
+				System.out.println("product: "+productName+" belongs in category: "+category);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -542,19 +546,43 @@ public class ProductDAO {
      * Returns map of products and their total sales from all customers.
      * @return
      */
-	public HashMap<String,Integer> getTotalSales() {
+	public HashMap<String,Integer> getTotalSales(String filter) {
 
 	    HashMap<String, Integer> totalSalesPerProduct = new HashMap<>();
 		
 		ResultSet rs = null;
+		ResultSet rc= null;
 		Statement stmt = null;
+		PreparedStatement pt = null;
+		ArrayList<String> productsByCategory = new ArrayList<>();
 
 		try {
 			stmt = ConnectionManager.getConnection().createStatement();
 			rs = stmt.executeQuery(GET_TOTAL_SALES_FOR_EACH_PRODUCT);
 			
-			while(rs.next()) {
-				totalSalesPerProduct.put(rs.getString("product_name"), rs.getInt(2));
+			if (filter==null){
+				while(rs.next()) {
+					totalSalesPerProduct.put(rs.getString("product_name"), rs.getInt(2));
+				}
+			}
+			else {
+				pt = ConnectionManager.getConnection().prepareStatement(GET_ALL_PRODUCTS_FROM_CATEGORY_NO_OFFSET);
+				pt.setString(1, filter);
+				
+				//Get the products in that category.
+				productsByCategory = getProductsFromCategory(filter);
+				
+				while(rs.next()) {
+					//Only add product if the product belongs to the given category.
+					String productName = rs.getString("product_name");
+					if (productsByCategory.contains(productName)){
+						totalSalesPerProduct.put(productName, rs.getInt(2));
+					}
+					
+					
+				}
+				
+				
 			}
 			
 		} catch (SQLException e) {

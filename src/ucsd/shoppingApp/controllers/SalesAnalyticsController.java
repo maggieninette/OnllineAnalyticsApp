@@ -84,29 +84,40 @@ public class SalesAnalyticsController extends HttpServlet {
 		Map <String, Integer> totalSales = new HashMap <>();
         HashMap<String, Map<String, Integer>> totalSalesPerState = new HashMap<>();
         HashMap<String,Integer> totalSalesPerProduct = new HashMap<>();
+        HashMap<String,Integer> totalSalesPerProductByCategory = new HashMap<>();
+        String filter;
 
         states = StateDAO.getStatesTopKList(categoryFilter);
+		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
 
-        // Get mapping of state to total money they spent in purchases.
-		if (categoryFilter.equals("all_products")) {
-			totalSales = StateDAO.getTotalPurchasesAllProducts(states);
-		}
-		else{
-			totalSales = StateDAO.getTotalPurchasesPerCategory(states, categoryFilter);
-		}
-
+		
 		// Get Map<product id, total sale> for every customer/state and put it in the list.
 		totalSalesPerState = StateDAO.getStateMappingAllProducts(states);
-	
-		
-		// Get column values (product names) depending on the category filter selected.
-		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
 				
-		//Get a mapping of products to total sales made for that product.
-		totalSalesPerProduct = product.getTotalSales();
+		//Get a mapping of products to total sales made for that product (with/without filter).
+		totalSalesPerProduct = product.getTotalSales(null);
+		totalSalesPerProductByCategory = product.getTotalSales(categoryFilter);
+        
+
+		if (categoryFilter.equals("all_products")) {
+	        // Get mapping of state to total money they spent in purchases.
+			totalSales = StateDAO.getTotalPurchasesAllProducts(states);
+			
+			products = product.getTopKOrderedProducts(totalSalesPerProduct,(int) session.getAttribute("column_counter"));
+			
+			
+		}
+		else{
+	        // Get mapping of state to total money they spent in purchases, filtered by category.
+			totalSales = StateDAO.getTotalPurchasesPerCategory(states, categoryFilter);
+			
+			products = product.getTopKOrderedProducts(totalSalesPerProductByCategory,(int) session.getAttribute("column_counter"));
+			
+		}
+
 
 		//products = product.filterProductbyCategory(categoryFilter, (int) session.getAttribute("column_counter"));
-		products = product.getTopKOrderedProducts(totalSalesPerProduct,(int) session.getAttribute("column_counter"));
+		
 		
 		
 		// Check if next columns button should be displayed.

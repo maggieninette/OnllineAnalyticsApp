@@ -160,7 +160,8 @@ public class StateDAO {
 	}
 
     /**
-     * TODO: Finish header.
+     * TODO: Gets a map that maps a state to a map that maps a product name to how much sales
+     * 		 were made for that product. (Every state has a map (key:product, value:total sale)
      * @param states
      * @return
      */
@@ -203,7 +204,7 @@ public class StateDAO {
 					productName = productMapping.get(productId);
 
 					//so in grandTotal, we can look up how much money was spent on each
-					//product by name (each customer has a grandTotal map.
+					//product by name (each state has a grandTotal map.
 					grandTotal.put(productName, rs.getInt(2));
 				}
 
@@ -231,7 +232,7 @@ public class StateDAO {
 	}
 
     /**
-     * Returns mapping of state name to total purchases made by customers from each state for all products.
+     * Returns mapping of state name to total purchases made by each state across all products.
      * @param states
      * @return
      */
@@ -240,7 +241,7 @@ public class StateDAO {
         Map<String, Integer> totalSalesPerState = new HashMap<>();
 		HashMap<String, Map<String,Integer>> stateMapping = getStateMappingAllProducts(states);
 		
-		//customerMapping is a hashmap that maps state to a hashmap of product names, and total purchase for that product.
+		//stateMapping is a hashmap that maps state to a hashmap of product names, and total purchase for that product.
 		//so, for each state's hashmap, we sum up the purchases...
 		for (Map.Entry<String, Map <String,Integer>> entry : stateMapping.entrySet()) {
 		    String state = entry.getKey();
@@ -266,12 +267,13 @@ public class StateDAO {
      */
 	public static Map<String, Integer> getTotalPurchasesPerCategory(List<String> states, String category) {
 
+
 	    Map<String, Integer> totalSalesPerState = new HashMap<>();
 		HashMap<String, Map<String,Integer>> stateMapping = getStateMappingAllProducts(states);
 		
-		//customerMapping is a hashmap that maps user to a hashmap of product names, and total purchase for that product.
-		//so, for each customer's hashmap, we sum up the purchases ONLY for products belonging in
-		//certain category...
+		//staterMapping is a hashmap that maps each state to a hashmap of product names, and total purchase for that product.
+		//so, for each state's hashmap, we sum up the purchases ONLY for products belonging in
+		//a give category...
 		ProductDAO p = new ProductDAO(ConnectionManager.getConnection());
 		
 		ArrayList<String> productsFromSelectedCategory = p.getProductsFromCategory(category);
@@ -284,6 +286,7 @@ public class StateDAO {
 		    int total = 0;
 		    for (Map.Entry<String, Integer> entry2 : stateMap.entrySet()) {
 		    	if (productsFromSelectedCategory.contains(entry2.getKey())) {
+		    	
 		    		total = total + entry2.getValue();
 		    	}
 		    }
@@ -295,7 +298,7 @@ public class StateDAO {
 	}
 
     /**
-     * Builds a list of states sorted according to total money spent by customers belonging to each state.
+     * Builds a list of states sorted according to total sales made in each state.
      * @param filter
      * @return
      */
@@ -327,7 +330,7 @@ public class StateDAO {
 				totalSalesPerState = getTotalPurchasesPerCategory(allStates, filter);
 			}
 
-			// Make pairs (customer, total money spent) and sort the list.
+			// Make pairs (state, total money spent) and sort the list.
 			ArrayList<Pair> statesTotalPairs = new ArrayList<>();
 		    for (Map.Entry<String, Integer> entry : totalSalesPerState.entrySet()) {
 		    	Pair stateTotalPair = new Pair(entry.getKey(),entry.getValue());
