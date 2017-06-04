@@ -83,6 +83,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		List<String> states = new ArrayList<String>();
 		Map <String, Integer> totalSales = new HashMap <>();
         HashMap<String, Map<String, Integer>> totalSalesPerState = new HashMap<>();
+        HashMap<String,Integer> totalSalesPerProduct = new HashMap<>();
 
         states = StateDAO.getStatesTopKList(categoryFilter);
 
@@ -96,10 +97,17 @@ public class SalesAnalyticsController extends HttpServlet {
 
 		// Get Map<product id, total sale> for every customer/state and put it in the list.
 		totalSalesPerState = StateDAO.getStateMappingAllProducts(states);
+	
 		
 		// Get column values (product names) depending on the category filter selected.
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
-		products = product.filterProductbyCategory(categoryFilter, (int) session.getAttribute("column_counter"));
+				
+		//Get a mapping of products to total sales made for that product.
+		totalSalesPerProduct = product.getTotalSales();
+
+		//products = product.filterProductbyCategory(categoryFilter, (int) session.getAttribute("column_counter"));
+		products = product.getTopKOrderedProducts(totalSalesPerProduct,(int) session.getAttribute("column_counter"));
+		
 		
 		// Check if next columns button should be displayed.
 		if (product.filterProductbyCategory(categoryFilter, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
@@ -109,6 +117,8 @@ public class SalesAnalyticsController extends HttpServlet {
 		request.setAttribute("col_values", products);
 		request.setAttribute("cell_values", totalSalesPerState);
 		request.setAttribute("totalSales", totalSales);
+		request.setAttribute("totalSalesPerProduct", totalSalesPerProduct);
+		
 	}
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

@@ -8,6 +8,7 @@
 	List<String> colVals = new ArrayList<>();
 	HashMap<String, Map<String,Integer>> cellVals = new HashMap<>();
 	Map<String, Integer> totalSales = new HashMap<>();
+	HashMap<String,Integer> totalSalesPerProduct = new HashMap<>();
 
 	if (request.getAttribute("row_values") != null || request.getAttribute("col_values") != null ||
 		request.getAttribute("cell_values") != null || request.getAttribute("totalSales") != null) {
@@ -17,6 +18,7 @@
 		colVals = (List<String>) request.getAttribute("col_values");
 		cellVals = (HashMap<String, Map <String,Integer>>) request.getAttribute("cell_values");
 		totalSales = (Map<String, Integer>) request.getAttribute("totalSales");
+		totalSalesPerProduct = (HashMap<String, Integer>) request.getAttribute("totalSalesPerProduct");
 	}
 
 	Connection con = ConnectionManager.getConnection();
@@ -50,9 +52,9 @@
 	</c:when>
 	<c:otherwise>
 		<form action="SalesAnalyticsController" method="post">
-			<c:if test="${sessionScope.hideNextColsBtn eq null}">
-				<input type="submit" value="Next 10 Columns" name="action" />
-			</c:if>
+	 		<c:if test="${sessionScope.hideNextColsBtn eq null}"> 
+				<input type="submit" value="Next 50 Columns" name="action" />
+	   		</c:if> 
 			<input type="submit" value="Reset" name="action" />
 		</form>
 		<table border="1">
@@ -61,8 +63,10 @@
 			<%
 				// Setting up column headers.
 				for (int i = 0; i < colVals.size(); i++) {
+					String productName = colVals.get(i);
+					int totalSalePerProduct = totalSalesPerProduct.get(productName);
 			%>
-			<td><b><%= colVals.get(i) %></b></td>
+			<td><b><%= productName+ " ("+Integer.toString(totalSalePerProduct)+ ")" %></b></td>
 			<%
 				}
 			%>

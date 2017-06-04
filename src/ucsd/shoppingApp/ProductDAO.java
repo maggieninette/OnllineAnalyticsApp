@@ -576,6 +576,10 @@ public class ProductDAO {
 		
 		return totalSalesPerProduct;
 	}
+	
+	
+	
+	
 
 	/*
 	 * This function returns  map of products and their hashmap(vector) (getKey: customer, getValue: total sale)
@@ -774,4 +778,46 @@ public class ProductDAO {
 
 		return sortedPairsDescending;
 	}
+	
+	public List<String> getTopKOrderedProducts(HashMap<String,Integer> totalSalesPerProduct,int offset) {
+
+		List<String> topKOrderedProducts = new ArrayList<>();
+		
+		// Make pairs (product, total money spent) and sort the list.
+		ArrayList<Pair> productTotalPairs = new ArrayList<>();
+		int i =0;
+	    for (HashMap.Entry<String, Integer> entry : totalSalesPerProduct.entrySet()) {
+
+	    	Pair productTotalPair = new Pair(entry.getKey(),entry.getValue());
+	    	productTotalPairs.add(productTotalPair);
+	    	i++;
+	    }
+	    
+	    // Sort list of pairs.
+	    ArrayList<Pair> sortedProductTotalPairs = Pair.bubbleSort(productTotalPairs);
+	    
+
+	    // now put it into the topKOrderedProducts list. Start from the end of the sortedProductTotalPairs...
+	    
+	    
+	    int counter =1;
+	    for (int j = sortedProductTotalPairs.size()-(offset*50)-1; j >= 0; j--) {
+	    	
+	    	topKOrderedProducts.add(sortedProductTotalPairs.get(j).getKey());
+	    	
+	    	if (counter==50){
+	    		break;
+	    	}
+	    	counter++;
+	    }
+
+		
+		return topKOrderedProducts;
+	}
 }
+
+
+
+
+
+
