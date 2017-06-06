@@ -37,7 +37,7 @@ public class SimilarProductsController extends HttpServlet {
     	Map<String, Map<String, Integer>> productVectors = product.getVector(customerMapping);
     	
     	//Get totalSales per product
-    	HashMap<String,Integer> totalSalesPerProduct = product.getTotalSales();
+    	HashMap<String,Integer> totalSalesPerProduct = product.getTotalSales(null);
     	
     	
     	//Get list of products.

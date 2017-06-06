@@ -7,6 +7,13 @@ CREATE TABLE TopProductSales (
     );
 
 
+CREATE TABLE OldTop50Products (
+    product_id INTEGER,
+    product_name TEXT
+    
+    );
+
+
 INSERT INTO TopProductSales(
 SELECT p.id as product_id, p.product_name as product_name, COALESCE(totalsale, 0) as total 
 FROM product p LEFT OUTER JOIN 
