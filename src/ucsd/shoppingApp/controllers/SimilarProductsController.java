@@ -38,10 +38,6 @@ public class SimilarProductsController extends HttpServlet {
     	
     	//Get totalSales per product
     	HashMap<String,Integer> totalSalesPerProduct = product.getTotalSales(null);
-<<<<<<< HEAD
-    	
-=======
->>>>>>> b24fdb122af36115c501f8b76aa783af37b5fd39
     	
     	//Get list of products.
     	List<String> allProducts = product.getAllProducts();

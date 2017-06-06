@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.google.gson.Gson;
 import ucsd.shoppingApp.ConnectionManager;
 import ucsd.shoppingApp.PrecomputedStateTopK;
 import ucsd.shoppingApp.PrecomputedTopProductSales;
@@ -145,6 +146,7 @@ public class SalesAnalyticsController extends HttpServlet {
 	}
 	
 	public void updatePrecomputedTables(HttpServletRequest request, HttpServletResponse response) {
+
 		HttpSession session = request.getSession();
 		String filter = (String) session.getAttribute("filter");
 		List<String> newTopKProducts = new ArrayList<>();
@@ -177,20 +179,44 @@ public class SalesAnalyticsController extends HttpServlet {
 		 * 
 		 */
 		
-		
-		
-		
 		PrecomputedTopProductSales.clearLogTable(); //Clears the log table.
 	}
-	
+
+    /**
+     * Services AJAX request from salesanalytics.jsp refresh button and responds with a list of products no longer in
+     * the top 50 as JSON.
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         System.out.println("Server received AJAX request.");
 
-        // Send response.
-        response.setContentType("text/html");
+        // Get products no longer in top 50.
+        List<String> noLongerTopKProductsSample = new ArrayList<>();
+        noLongerTopKProductsSample.add("PROD_4527");
+        noLongerTopKProductsSample.add("PROD_2896");
+
+        // Get updated total sale prices.
+        Map<String, Double> updatedTotalSalePrices = new HashMap<>();
+        updatedTotalSalePrices.put("IndianaPROD_4527", 13123987213.12);
+        updatedTotalSalePrices.put("VermontPROD_4527", 98722313.12);
+        updatedTotalSalePrices.put("KansasPROD_1351", 13123987213.12);
+
+        // Package list as JSON.
+        Gson gson = new Gson();
+        String noLongerTopKProductsJson = gson.toJson(noLongerTopKProductsSample);
+        String updatedTotalSalePricesJson = gson.toJson(updatedTotalSalePrices);
+
+
+        String jsonResponse = null;
+
+        // Send response as JSON.
+        response.setContentType("application/json");
         PrintWriter out = response.getWriter();
-        out.write("sample response text");
+        out.print(jsonResponse);
         out.close();
 	}
 
@@ -212,11 +238,6 @@ public class SalesAnalyticsController extends HttpServlet {
 			session.removeAttribute("filter");
 			session.removeAttribute("hideNextColsBtn");
 			resetOffset(request, response);
-		}
-		else if (action.equalsIgnoreCase("Refresh")) {
-			//Update the precomputed table.
-			updatePrecomputedTables(request,response);
-			
 		}
 
 		else {

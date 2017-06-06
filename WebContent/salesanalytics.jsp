@@ -6,9 +6,9 @@
 <%
 	List<String> rowVals = new ArrayList<>();
 	List<String> colVals = new ArrayList<>();
-	HashMap<String, Map<String,Integer>> cellVals = new HashMap<>();
+	HashMap<String, Map<String, Integer>> cellVals = new HashMap<>();
 	Map<String, Integer> totalSales = new HashMap<>();
-	HashMap<String,Integer> totalSalesPerProduct = new HashMap<>();
+	HashMap<String, Integer> totalSalesPerProduct = new HashMap<>();
 
 	if (request.getAttribute("row_values") != null || request.getAttribute("col_values") != null ||
 		request.getAttribute("cell_values") != null || request.getAttribute("totalSales") != null) {
@@ -33,9 +33,13 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>Sales Analytics</title>
     <link rel="stylesheet" href="css/salesanalytics.css" />
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/salesanalytics.js"></script>
 </head>
 <body>
-<a id="floating-refresh-link" onclick="refreshTable()">Refresh</a>
+<c:if test="${sessionScope.firstTime ne null}">
+    <a id="floating-refresh-link" onclick="refreshTable()">Refresh</a>
+</c:if>
 <a id="back-home-link" href="./home.jsp">Back to Home</a>
 <c:choose>
 	<c:when test="${sessionScope.firstTime eq null}">
@@ -52,29 +56,38 @@
 	</c:when>
 	<c:otherwise>
 		<form action="SalesAnalyticsController" method="post">
-	 		<c:if test="${sessionScope.hideNextColsBtn eq null}"> 
+	 		<%--<c:if test="${sessionScope.hideNextColsBtn eq null}">
 				<input type="submit" value="Next 50 Columns" name="action" />
-	   		</c:if> 
-			<input type="submit" value="Reset" name="action" />
-			<input type="submit" value="Refresh" name="action" />
+	   		</c:if> --%>
+			<input type="submit" id="reset-btn" value="Reset" name="action" />
 		</form>
 		<table border="1">
 		<tr>
 			<td></td>
-			<%
+            <%--<c:forEach var="productName" items="${colVals}">
+                <td class="${productName}">
+                    blah
+                    <b>${productName} ( <%= totalSalesPerProduct.get((String) pageContext.getAttribute("productName")) %> )</b>
+                </td>
+            </c:forEach>--%>
+            <%
 				// Setting up column headers.
 				for (int i = 0; i < colVals.size(); i++) {
 					String productName = colVals.get(i);
+					pageContext.setAttribute("productName", productName);
 					int totalSalePerProduct = totalSalesPerProduct.get(productName);
 			%>
-			<td><b><%= productName+ " ("+Integer.toString(totalSalePerProduct)+ ")" %></b></td>
+			<td class="${productName}">
+                <b><%= productName + " (" + Integer.toString(totalSalePerProduct) + ")" %></b>
+            </td>
 			<%
 				}
 			%>
 		</tr>
 		<tr>
 			<%
-				// Loop through rows.
+                System.out.println("productName: " + pageContext.getAttribute("productName"));
+                // Loop through rows.
 				Map <String, Integer> userSales;
 				int sale = 0;
 	
@@ -84,28 +97,29 @@
 				    userSales = cellVals.get(user);
 			%>
 			<td><b><%= user + " (" + Integer.toString(totalSales.get(user)) + ")" %></b></td>
-			<% 
-				// Loop through columns.
-                for (int j = 0; j < colVals.size(); j++) {
-					String temp;
-					temp = colVals.get(j);
+            <%
+				    // Loop through columns.
+                    for (int j = 0; j < colVals.size(); j++) {
+					    String temp;
+					    temp = colVals.get(j);
+                        pageContext.setAttribute("productName", temp);
+                        pageContext.setAttribute("cellId", user + temp);
+                        System.out.println((String) pageContext.getAttribute("cellId"));
 
-					if (userSales.get(temp) != null) {
-						sale = userSales.get(temp);
-					}
-			%>
-			<td><%= sale %></td>
-			<% 
-				}
-			%>
+					    if (userSales.get(temp) != null) {
+						    sale = userSales.get(temp);
+					    }
+            %>
+			<td id=${cellId} class="${productName}"><%= sale %></td>
+            <%
+				    }
+            %>
 		</tr>
-		<% 
-			}
-		%>
+		    <%
+			    }
+		    %>
 		</table>
 	</c:otherwise>
 </c:choose>
-<script src="js/jquery-3.2.1.min.js"></script>
-<script src="js/salesanalytics.js"></script>
 </body>
 </html>

@@ -23,25 +23,25 @@ public class PrecomputedTopProductSales {
 	
 	private final static String CREATE_VIEW_OLD_TOP_50 =
             "CREATE OR REPLACE VIEW old_top_50_products AS " +
-                    "SELECT product_id AS product_id, product_name AS product_name, totalsale AS total " +
-                    "FROM top_product_sales" +
-                    "ORDER BY total DESC " +
-                    "LIMIT 50;";
+            "SELECT product_id AS product_id, product_name AS product_name, totalsale AS total " +
+            "FROM top_product_sales " +
+            "ORDER BY total DESC " +
+            "LIMIT 50;";
 	
 
 	private final static String GET_PRODUCTS_OUT_OF_TOP_50 =
             "CREATE OR REPLACE VIEW new_top_50_products AS " +
-                    "SELECT  product_id AS product_id, product_name AS product_name, totalsale AS total " +
-                    "FROM top_product_sales " +
-                    "ORDER BY total DESC" +
-                    "LIMIT 50; " +
+            "SELECT  product_id AS product_id, product_name AS product_name, totalsale AS total " +
+            "FROM top_product_sales " +
+            "ORDER BY total DESC " +
+            "LIMIT 50; " +
 		
-                    "SELECT * " +
-                    "FROM old_top_50_products " +
-                    "WHERE product_id NOT IN " +
-                    "(SELECT product_id " +
-                    "FROM new_top_50_products "+
-                    ");";
+            "SELECT * " +
+            "FROM old_top_50_products " +
+            "WHERE product_id NOT IN " +
+                "(SELECT product_id " +
+                "FROM new_top_50_products "+
+                ");";
 	
 	private final static String UPDATE_TOP_PRODUCT_SALES_FILTERED =
             "UPDATE top_product_sales_filtered " +

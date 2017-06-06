@@ -8,7 +8,8 @@
 </head>
 <body>
 	<% 
-		session.setAttribute("row_counter", 0);
+		session.removeAttribute("firstTime");
+        session.setAttribute("row_counter", 0);
 		session.setAttribute("column_counter",0);
 	
 		if(session.getAttribute("personName") == null) {
