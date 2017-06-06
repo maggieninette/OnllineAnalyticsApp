@@ -180,9 +180,7 @@ public class StateDAO {
 				HashMap<String, Integer> grandTotal = new HashMap<>();
 				state_name = states.get(i);
 				
-				ptst = conn.prepareStatement(	"SELECT * "+
-												"FROM cellValues "+
-												"WHERE state_name=?");
+				ptst = conn.prepareStatement("SELECT * FROM precomputed_state_topk WHERE state_name = ?");
 				ptst.setString(1, state_name);	
 				
 				rs = ptst.executeQuery();
@@ -222,14 +220,12 @@ public class StateDAO {
 
         Map<String, Integer> totalSalesPerState = new HashMap<>();
 
-		
 		//Go to the TopStateSales table and for each state get the total purchases. 
 		PreparedStatement ptst = null;
 		ResultSet rs = null;
 		
 		try {	
-			ptst = ConnectionManager.getConnection().prepareStatement(	"SELECT * "+
-																		"FROM TopStateSales ");
+			ptst = ConnectionManager.getConnection().prepareStatement("SELECT * FROM top_state_sales");
 		
 			rs = ptst.executeQuery();
 			
@@ -264,7 +260,6 @@ public class StateDAO {
      * @return
      */
 	public static Map<String, Integer> getTotalPurchasesPerCategory(List<String> states, String category) {
-
 
 	    Map<String, Integer> totalSalesPerState = new HashMap<>();
 		HashMap<String, Map<String,Integer>> stateMapping = getStateMappingAllProducts(states);
@@ -316,7 +311,7 @@ public class StateDAO {
 			
 			// Check if sales filter had been applied.
 			if (filter.equals("all_products")) {
-				rs = stmt.executeQuery("SELECT * FROM TopStateSales ");
+				rs = stmt.executeQuery("SELECT * FROM top_state_sales ");
 				
 				while (rs.next()) {
 					statesTopKSorted.add(rs.getString("state_name"));

@@ -559,10 +559,10 @@ public class ProductDAO {
 
 		try {
 			stmt = ConnectionManager.getConnection().createStatement();
-			rs = stmt.executeQuery("SELECT * FROM TopProductSales ");
+			rs = stmt.executeQuery("SELECT * FROM top_product_sales ");
 			
-			if (filter==null){
-				while(rs.next()) {
+			if (filter == null) {
+				while (rs.next()) {
 					totalSalesPerProduct.put(rs.getString("product_name"), rs.getInt("totalsale"));
 				}
 			}
@@ -602,14 +602,6 @@ public class ProductDAO {
 		
 		return totalSalesPerProduct;
 	}
-	
-	
-	
-	
-
-	/*
-	 * This function returns  map of products and their hashmap(vector) (getKey: customer, getValue: total sale)
-	 */
 
     /**
      * Returns map of products and their purchase vector.
@@ -727,7 +719,7 @@ public class ProductDAO {
 		    String product1 = allProducts.get(j);
 			Map<String, Integer> givenProductVector = productVectors.get(product1);
 			
-			for (int i = 0; i < allProducts.size(); i++){
+			for (int i = 0; i < allProducts.size(); i++) {
 				if (!allProducts.get(i).equals(product1)) {
 					BigDecimal accumulator = new BigDecimal(0);
 					otherProduct = allProducts.get(i);
@@ -789,7 +781,7 @@ public class ProductDAO {
 		int counter = 1;
 		ArrayList<Pair> keys = new ArrayList<Pair>(sortedPairs.keySet());
 
-		for(int j = keys.size() - 1; j >= 0; j--) {
+		for (int j = keys.size() - 1; j >= 0; j--) {
 			Pair productPair = keys.get(j);
 			BigDecimal cosine = sortedPairs.get(productPair);
 
@@ -805,7 +797,7 @@ public class ProductDAO {
 		return sortedPairsDescending;
 	}
 	
-	public List<String> getTopKOrderedProducts(HashMap<String,Integer> totalSalesPerProduct,int offset) {
+	public List<String> getTopKOrderedProducts(HashMap<String, Integer> totalSalesPerProduct, int offset) {
 
 		List<String> topKOrderedProducts = new ArrayList<>();
 		
@@ -821,29 +813,19 @@ public class ProductDAO {
 	    
 	    // Sort list of pairs.
 	    ArrayList<Pair> sortedProductTotalPairs = Pair.bubbleSort(productTotalPairs);
-	    
 
 	    // now put it into the topKOrderedProducts list. Start from the end of the sortedProductTotalPairs...
-	    
-	    
 	    int counter =1;
-	    for (int j = sortedProductTotalPairs.size()-(offset*50)-1; j >= 0; j--) {
+	    for (int j = sortedProductTotalPairs.size() - (offset * 50) -1; j >= 0; j--) {
 	    	
 	    	topKOrderedProducts.add(sortedProductTotalPairs.get(j).getKey());
 	    	
-	    	if (counter==50){
+	    	if (counter == 50) {
 	    		break;
 	    	}
 	    	counter++;
 	    }
-
 		
 		return topKOrderedProducts;
 	}
 }
-
-
-
-
-
-

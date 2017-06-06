@@ -93,14 +93,12 @@ public class SalesAnalyticsController extends HttpServlet {
         states = StateDAO.getStatesTopKList(categoryFilter);
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
 
-		
 		// Get Map<product id, total sale> for every customer/state and put it in the list.
 		totalSalesPerState = StateDAO.getStateMappingAllProducts(states); //OPTIMIZED
 				
 		//Get a mapping of products to total sales made for that product (with/without filter).
 		totalSalesPerProduct = product.getTotalSales(null); //OPTIMIZED
 		totalSalesPerProductByCategory = product.getTotalSales(categoryFilter); //OPTIMIZED
-        
 
 		if (categoryFilter.equals("all_products")) {
 	        // Get mapping of state to total money they spent in purchases.
@@ -110,7 +108,7 @@ public class SalesAnalyticsController extends HttpServlet {
 			
 			
 		}
-		else{
+		else {
 	        // Get mapping of state to total money they spent in purchases, filtered by category.
 			totalSales = StateDAO.getTotalPurchasesPerCategory(states, categoryFilter);
 			
@@ -118,7 +116,6 @@ public class SalesAnalyticsController extends HttpServlet {
 			
 			
 		}
-		
 		
 		// Check if next columns button should be displayed.
 		if (product.filterProductbyCategory(categoryFilter, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
@@ -129,7 +126,6 @@ public class SalesAnalyticsController extends HttpServlet {
 		request.setAttribute("cell_values", totalSalesPerState);
 		request.setAttribute("totalSales", totalSales);
 		request.setAttribute("totalSalesPerProduct", totalSalesPerProduct);
-		
 	}
 	
 	
@@ -139,14 +135,11 @@ public class SalesAnalyticsController extends HttpServlet {
 		List<String> noLongerTopKStates = new ArrayList<>();
 		HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
 		
-		
 		noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable();
 		noLongerTopKStates = PrecomputedTopStateSales.updateTopStateSalesTable();
 		newCellValues = PrecomputedCellValues.updateCellValues();
 		
 		PrecomputedTopProductSales.clearLogTable(); //Clears the log table.
-		
-		
 	}
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -179,12 +172,11 @@ public class SalesAnalyticsController extends HttpServlet {
 			session.removeAttribute("hideNextColsBtn");
 			resetOffset(request, response);
 		}
-		else if (action.equalsIgnoreCase("Refresh")){
+		else if (action.equalsIgnoreCase("Refresh")) {
 			//Update the precomputed table.
 			updatePrecomputedTables(request,response);
 			
 		}
-
 
 		else {
 

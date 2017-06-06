@@ -9,40 +9,38 @@ import java.util.List;
 
 public class PrecomputedTopProductSales {
 
+	private final static String UPDATE_TOP_PRODUCT_SALES =
+            "UPDATE top_product_sales " +
+            "SET totalsale = top_product_sales.totalsale + logtable.total " +
+            "FROM " +
+                "(SELECT product_id, SUM(total) AS total " +
+                "FROM log " +
+                "GROUP BY product_id " +
+                ") AS logtable " +
+                "WHERE logtable.product_id = top_product_sales.product_id " +
+                "AND top_product_sales.product_id = logtable.product_id;";
 	
-	private final static String UPDATE_TOP_PRODUCT_SALES = "UPDATE TopProductSales "+
-															"SET totalsale = TopProductSales.totalsale+logtable.total"+
-															"FROM 	("+
-																	"SELECT product_id, SUM(total) as total "+
-																	"FROM log"+
-																	"GROUP BY product_id "+
-																	") AS logtable"+
-																	"WHERE logtable.product_id=TopProductSales.product_id"+
-																	"AND TopProductSales.product_id=logtable.product_id"+
+	private final static String CREATE_VIEW_OLD_TOP_50 =
+            "CREATE OR REPLACE VIEW old_top_50_products AS " +
+                    "SELECT product_id AS product_id, product_name AS product_name " +
+                    "FROM top_product_sales " +
+                    "LIMIT 50;";
+	
 
-																	";";
-	
-	private final static String CREATE_VIEW_OLD_TOP_50 = 	"CREATE OR REPLACE VIEW old_top_50_products AS "+
-															"SELECT  product_id as product_id, product_name as product_name "+
-															"FROM TopProductSales "+ 
-															"LIMIT 50; ";
-	
-
-	private final static String GET_PRODUCTS_OUT_OF_TOP_50 =	"CREATE OR REPLACE VIEW new_top_50_products AS "+
-																"SELECT  product_id as product_id, product_name as product_name "+
-																"FROM TopProductSales "+ 
-																"LIMIT 50; "+
+	private final static String GET_PRODUCTS_OUT_OF_TOP_50 =
+            "CREATE OR REPLACE VIEW new_top_50_products AS " +
+                    "SELECT  product_id as product_id, product_name as product_name " +
+                    "FROM top_product_sales " +
+                    "LIMIT 50; " +
 		
-		
-																"SELECT * "+
-																"FROM old_top_50_products "+
-																"WHERE product_id NOT IN ( "+
-																	    				"SELECT product_id "+
-																	    				"FROM new_top_50_products "+
-																	    				"); ";
+                    "SELECT * " +
+                    "FROM old_top_50_products " +
+                    "WHERE product_id NOT IN " +
+                    "(SELECT product_id " +
+                    "FROM new_top_50_products "+
+                    ");";
 	
 	private final static String CLEAR_LOG_TABLE = "DELETE FROM log";
-	
 	
 	public static void clearLogTable() {
 		PreparedStatement pstmt = null;
@@ -51,7 +49,6 @@ public class PrecomputedTopProductSales {
 			pstmt.executeQuery();
 			
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		finally{
@@ -64,14 +61,11 @@ public class PrecomputedTopProductSales {
 			}		
 		}	
 	}
-	
-	
-	
+
 	/*
 	 * This function updates the precomputed TopProductSales table and returns the list 
 	 * of products that are no longer make it to the top 50.
 	 */
-	
 	public static List<String> updateTopProductSalesTable() {
 		
 		List<String> noLongerTopK = new ArrayList<>();	
@@ -79,7 +73,7 @@ public class PrecomputedTopProductSales {
 		PreparedStatement pstmt = null;
 		Statement stmt = null;
 		
-		try{
+		try {
 			pstmt = ConnectionManager.getConnection().prepareStatement(UPDATE_TOP_PRODUCT_SALES);
 			stmt = ConnectionManager.getConnection().createStatement();
 			
@@ -96,18 +90,15 @@ public class PrecomputedTopProductSales {
 			while (rs.next()) {
 				noLongerTopK.add(rs.getString("product_name"));
 			}
-					
-			
 		}
-		catch (SQLException e){
+		catch (SQLException e) {
 			e.printStackTrace();
 		}
-		finally{
+		finally {
 			if (rs != null) {
 				try {
 					rs.close();
 				} catch (SQLException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -118,14 +109,8 @@ public class PrecomputedTopProductSales {
 					e.printStackTrace();
 				}
 			}
-			
 		}
 	
 		return noLongerTopK;
-		
-		
 	}
-	
-	
-
 }
