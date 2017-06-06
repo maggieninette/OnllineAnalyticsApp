@@ -50,7 +50,7 @@ public class ProductDAO {
             "LIMIT 50 " +
             "OFFSET 50 * ?";
 
-	private static final String DELETE_PRODUCT_BY_ID = "DELETE FROM product WHERE id=?";
+	private static final String DELETE_PRODUCT_BY_ID = "DELETE FROM product WHERE id = ?";
 	
 	private static final String GET_TOTAL_SALES_FOR_EACH_PRODUCT =
             "SELECT p.product_name, COALESCE(totalsale, 0) " +
@@ -510,7 +510,6 @@ public class ProductDAO {
 		PreparedStatement ps = null;
 
 		try {
-
 			ps = ConnectionManager.getConnection().prepareStatement(GET_ALL_PRODUCTS_FROM_CATEGORY_NO_OFFSET);
 			ps.setString(1, category);
 			rs = ps.executeQuery();
@@ -559,10 +558,10 @@ public class ProductDAO {
 
 		try {
 			stmt = ConnectionManager.getConnection().createStatement();
-			rs = stmt.executeQuery("SELECT * FROM TopProductSales ");
+			rs = stmt.executeQuery("SELECT * FROM top_product_sales ");
 			
-			if (filter==null){
-				while(rs.next()) {
+			if (filter == null) {
+				while (rs.next()) {
 					totalSalesPerProduct.put(rs.getString("product_name"), rs.getInt("totalsale"));
 				}
 			}
@@ -574,10 +573,10 @@ public class ProductDAO {
 				//Get the products in that category.
 				productsByCategory = getProductsFromCategory(filter);
 				
-				while(rs.next()) {
+				while (rs.next()) {
 					//Only add product if the product belongs to the given category.
 					String productName = rs.getString("product_name");
-					if (productsByCategory.contains(productName)){
+					if (productsByCategory.contains(productName)) {
 						totalSalesPerProduct.put(productName, rs.getInt("totalsale"));
 					}	
 				}		
@@ -602,14 +601,6 @@ public class ProductDAO {
 		
 		return totalSalesPerProduct;
 	}
-	
-	
-	
-	
-
-	/*
-	 * This function returns  map of products and their hashmap(vector) (getKey: customer, getValue: total sale)
-	 */
 
     /**
      * Returns map of products and their purchase vector.
@@ -711,10 +702,10 @@ public class ProductDAO {
      * @return
      */
 	public Map<Pair, BigDecimal> getCosineSimilarityMapAllProducts(
-	        Map<String, Map<String,Integer>> productVectors, HashMap<String,Integer> totalSalesPerProduct,
+	        Map<String, Map<String, Integer>> productVectors, HashMap<String, Integer> totalSalesPerProduct,
             List<String> allProducts) {
 
-		HashMap<String,BigDecimal> cosineSimilarityMap = new HashMap<>();
+		HashMap<String, BigDecimal> cosineSimilarityMap = new HashMap<>();
         MathContext mc = new MathContext(10);
 
 		Map<String, Integer> otherProductVector;
@@ -727,7 +718,7 @@ public class ProductDAO {
 		    String product1 = allProducts.get(j);
 			Map<String, Integer> givenProductVector = productVectors.get(product1);
 			
-			for (int i = 0; i < allProducts.size(); i++){
+			for (int i = 0; i < allProducts.size(); i++) {
 				if (!allProducts.get(i).equals(product1)) {
 					BigDecimal accumulator = new BigDecimal(0);
 					otherProduct = allProducts.get(i);
@@ -740,8 +731,8 @@ public class ProductDAO {
 				    	BigDecimal otherProductTotal = new BigDecimal (otherProductVector.get(customer));
 				    	BigDecimal givenProductTotal = new BigDecimal (givenProductVector.get(customer));
 				    	
-				    	BigDecimal tmp = otherProductTotal.multiply(givenProductTotal,mc);
-				    	accumulator = accumulator.add(tmp,mc);
+				    	BigDecimal tmp = otherProductTotal.multiply(givenProductTotal, mc);
+				    	accumulator = accumulator.add(tmp, mc);
 				    }
 
 				    // Divide by (totalSales of givenProduct * totalSales of otherProduct).
@@ -749,7 +740,7 @@ public class ProductDAO {
 				    BigDecimal totalSaleOtherProduct = new BigDecimal(totalSalesPerProduct.get(otherProduct));
 				    BigDecimal cosineSimilarity = new BigDecimal(0);
 
-				    BigDecimal divideBy = totalSaleGivenProduct.multiply(totalSaleOtherProduct,mc);
+				    BigDecimal divideBy = totalSaleGivenProduct.multiply(totalSaleOtherProduct, mc);
 				    if (divideBy.compareTo(new BigDecimal(0)) == 1) {
 				    	cosineSimilarity = accumulator.divide(divideBy,mc);
 				    }
@@ -763,7 +754,7 @@ public class ProductDAO {
 		}
 
 		// Return cosineSimilarityMap.
-		Map<Pair,BigDecimal> sortedPairs = Pair.sortMap(cosinePairs);
+		Map<Pair, BigDecimal> sortedPairs = Pair.sortMap(cosinePairs);
 		return sortedPairs;
 	}
 
@@ -779,17 +770,17 @@ public class ProductDAO {
 	        Map<String, Map<String, Integer>> productVectors, HashMap<String, Integer> totalSalesPerProduct,
             List<String> allProducts) {
 		
-		Map<Pair,BigDecimal> sortedPairs = new TreeMap<>();
+		Map<Pair, BigDecimal> sortedPairs = new TreeMap<>();
 		sortedPairs = getCosineSimilarityMapAllProducts(productVectors, totalSalesPerProduct, allProducts);
 		
 		//Get all entries into a list, then starting from the end of the list, (get 100) and put it back into the map
-		Map<Pair,BigDecimal> sortedPairsDescending = new HashMap<>();
+		Map<Pair, BigDecimal> sortedPairsDescending = new HashMap<>();
 		Pair[] arr = new Pair[100];
 
 		int counter = 1;
 		ArrayList<Pair> keys = new ArrayList<Pair>(sortedPairs.keySet());
 
-		for(int j = keys.size() - 1; j >= 0; j--) {
+		for (int j = keys.size() - 1; j >= 0; j--) {
 			Pair productPair = keys.get(j);
 			BigDecimal cosine = sortedPairs.get(productPair);
 
@@ -805,7 +796,7 @@ public class ProductDAO {
 		return sortedPairsDescending;
 	}
 	
-	public List<String> getTopKOrderedProducts(HashMap<String,Integer> totalSalesPerProduct,int offset) {
+	public List<String> getTopKOrderedProducts(HashMap<String, Integer> totalSalesPerProduct, int offset) {
 
 		List<String> topKOrderedProducts = new ArrayList<>();
 		
@@ -821,29 +812,19 @@ public class ProductDAO {
 	    
 	    // Sort list of pairs.
 	    ArrayList<Pair> sortedProductTotalPairs = Pair.bubbleSort(productTotalPairs);
-	    
 
 	    // now put it into the topKOrderedProducts list. Start from the end of the sortedProductTotalPairs...
-	    
-	    
 	    int counter =1;
-	    for (int j = sortedProductTotalPairs.size()-(offset*50)-1; j >= 0; j--) {
+	    for (int j = sortedProductTotalPairs.size() - (offset * 50) -1; j >= 0; j--) {
 	    	
 	    	topKOrderedProducts.add(sortedProductTotalPairs.get(j).getKey());
 	    	
-	    	if (counter==50){
+	    	if (counter == 50) {
 	    		break;
 	    	}
 	    	counter++;
 	    }
-
 		
 		return topKOrderedProducts;
 	}
 }
-
-
-
-
-
-

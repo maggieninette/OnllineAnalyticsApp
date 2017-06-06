@@ -1,14 +1,5 @@
-DROP TABLE IF EXISTS log,trigger_test;
+DROP TABLE IF EXISTS log;
 
-CREATE TABLE trigger_test (
-    id SERIAL PRIMARY KEY,
-    cart_id INTEGER REFERENCES shopping_cart(id) NOT NULL,
-    person_id INTEGER REFERENCES person(id) NOT NULL,
-    state_name TEXT,
-    product_id INTEGER REFERENCES product(id) NOT NULL,
-    product_name TEXT,
-    total INTEGER
-    );  
 
 CREATE TABLE log(
     id SERIAL PRIMARY KEY,
@@ -18,8 +9,9 @@ CREATE TABLE log(
     product_id INTEGER REFERENCES product(id) NOT NULL,
     product_name TEXT,
     total INTEGER
-    ); 
+);
     
+
 CREATE OR REPLACE FUNCTION public.update_log()
 	RETURNS TRIGGER
     LANGUAGE 'plpgsql'
@@ -42,6 +34,7 @@ BEGIN
 END;
 $BODY$;
 
+
 DROP TRIGGER IF EXISTS after_update_shoppingcart on shopping_cart;
 DROP TRIGGER IF EXISTS after_insert_productsincart on products_in_cart;
  
@@ -57,7 +50,7 @@ CREATE OR REPLACE FUNCTION public.update_log_after_insert()
 	RETURNS TRIGGER AS $update_log$
 BEGIN
        
-       INSERT INTO trigger_test (cart_id,person_id,state_name,product_id,product_name,total)
+       INSERT INTO log (cart_id,person_id,state_name,product_id,product_name,total)
        SELECT sc.id, ps.id,st.state_name,p.id, p.product_name,(p.price*pc.quantity)
        FROM shopping_cart sc, product p, products_in_cart pc, person ps, state st
        WHERE NEW.id=pc.id
@@ -78,5 +71,4 @@ FOR EACH ROW
 EXECUTE PROCEDURE update_log_after_insert()
 ;
 
-    
-    
+   
