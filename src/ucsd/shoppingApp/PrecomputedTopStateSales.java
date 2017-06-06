@@ -10,31 +10,33 @@ import java.util.List;
 public class PrecomputedTopStateSales {
 	
 	
-	private final static String UPDATE_TOP_STATE_SALES = 	"UPDATE TopStateSales "+ 
-															"SET totalsale = TopStateSales.totalsale+logtable.total "+
+	private final static String UPDATE_TOP_STATE_SALES = 	"UPDATE top_state_sales "+ 
+															"SET totalsale = top_state_sales.totalsale+logtable.total "+
 															"FROM 	( "+
 																	"SELECT state_name, SUM(total) as total "+
 																	"FROM log "+
 																	"GROUP BY state_name "+ 
 																	") AS logtable "+
 					        
-															"WHERE logtable.state_name=TopStateSales.state_name" ;
+															"WHERE logtable.state_name=top_state_sales.state_name" ;
 	
 	private final static String CREATE_VIEW_OLD_TOP_50 = 	"CREATE OR REPLACE VIEW old_top_50_states AS "+
-															"SELECT state_name as state_name "+
-															"FROM TopStateSales "+ 
+															"SELECT state_name as state_name, totalsale as total "+
+															"FROM top_state_sales "+
+															"ORDER BY total DESC" +
 															"LIMIT 50; ";
 
 
-	private final static String GET_PRODUCTS_OUT_OF_TOP_50 =	"CREATE OR REPLACE VIEW new_top_50_products AS "+
-																"SELECT  state_name as state_name "+
-																"FROM TopStateSales "+ 
+	private final static String GET_STATES_OUT_OF_TOP_50 =		"CREATE OR REPLACE VIEW new_top_50_states AS "+
+																"SELECT  state_name as state_name, totalsale as total "+
+																"FROM top_state_sales "+
+																"ORDER BY total DESC" +
 																"LIMIT 50; "+
 
 
 																"SELECT * "+
-																"FROM old_top_50_products "+
-																"WHERE product_id NOT IN ( "+
+																"FROM old_top_50_states "+
+																"WHERE state_name NOT IN ( "+
 																						"SELECT state_name "+
 																						"FROM new_top_50_products "+
 																						"); ";
@@ -57,7 +59,7 @@ public class PrecomputedTopStateSales {
 			pstmt.executeUpdate();		
 			
 			//Get the products that no longer belong in the top 50.
-			rs = stmt.executeQuery(GET_PRODUCTS_OUT_OF_TOP_50);
+			rs = stmt.executeQuery(GET_STATES_OUT_OF_TOP_50);
 			
 			//Put the products in a list. 
 			while (rs.next()) {

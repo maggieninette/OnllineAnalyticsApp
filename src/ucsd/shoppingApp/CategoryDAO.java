@@ -29,6 +29,12 @@ public class CategoryDAO {
             "FROM category " +
             "WHERE category_name = ? " +
             "ORDER BY UPPER(category_name) ASC";
+	
+	private static String GET_CATEGORIES_BY_NAME2_SQL =
+            "SELECT * " +
+            "FROM category " +
+            "WHERE category_name = ? " +
+            "ORDER BY UPPER(category_name) ASC";
 
     private static String GET_ALL_CATEGORIES_ALPHABETICAL_SQL =
             "SELECT id, category_name, description " +
@@ -109,10 +115,11 @@ public class CategoryDAO {
 		Statement stmt = null;
 		ResultSet rs = null;
 		try {
-			ptst = con.prepareStatement(GET_CATEGORIES_BY_NAME_SQL);
+			ptst = con.prepareStatement(GET_CATEGORIES_BY_NAME2_SQL);
 			ptst.setString(1, category_name);
 			rs = ptst.executeQuery();
 			while (rs.next()) {
+
 				category = new CategoryModel(rs.getInt("id"), rs.getString("category_name"),
 						rs.getString("description"));
 				break; // should happen only once anyway.

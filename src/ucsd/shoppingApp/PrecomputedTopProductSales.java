@@ -22,15 +22,17 @@ public class PrecomputedTopProductSales {
 	
 	private final static String CREATE_VIEW_OLD_TOP_50 =
             "CREATE OR REPLACE VIEW old_top_50_products AS " +
-                    "SELECT product_id AS product_id, product_name AS product_name " +
-                    "FROM top_product_sales " +
+                    "SELECT product_id AS product_id, product_name AS product_name, totalsale AS total " +
+                    "FROM top_product_sales" +
+                    "ORDER BY total DESC " +
                     "LIMIT 50;";
 	
 
 	private final static String GET_PRODUCTS_OUT_OF_TOP_50 =
             "CREATE OR REPLACE VIEW new_top_50_products AS " +
-                    "SELECT  product_id as product_id, product_name as product_name " +
+                    "SELECT  product_id AS product_id, product_name AS product_name, totalsale AS total " +
                     "FROM top_product_sales " +
+                    "ORDER BY total DESC" +
                     "LIMIT 50; " +
 		
                     "SELECT * " +

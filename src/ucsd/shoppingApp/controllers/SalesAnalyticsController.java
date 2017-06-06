@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import ucsd.shoppingApp.ConnectionManager;
-import ucsd.shoppingApp.PrecomputedCellValues;
+import ucsd.shoppingApp.PrecomputedStateTopK;
 import ucsd.shoppingApp.PrecomputedTopProductSales;
 import ucsd.shoppingApp.PrecomputedTopStateSales;
 import ucsd.shoppingApp.ProductDAO;
@@ -131,7 +131,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		
 		noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable();
 		noLongerTopKStates = PrecomputedTopStateSales.updateTopStateSalesTable();
-		newCellValues = PrecomputedCellValues.updateCellValues();
+		newCellValues = PrecomputedStateTopK.updatePrecomputedStateTopK();
 		
 		PrecomputedTopProductSales.clearLogTable(); //Clears the log table.
 	}

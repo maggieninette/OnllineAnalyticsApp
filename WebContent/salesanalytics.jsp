@@ -56,6 +56,7 @@
 				<input type="submit" value="Next 50 Columns" name="action" />
 	   		</c:if> 
 			<input type="submit" value="Reset" name="action" />
+			<input type="submit" value="Refresh" name="action" />
 		</form>
 		<table border="1">
 		<tr>
