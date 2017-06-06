@@ -105,16 +105,11 @@ public class SalesAnalyticsController extends HttpServlet {
 			totalSales = StateDAO.getTotalPurchasesAllProducts(states);  //OPTIMIZED
 			
 			products = product.getTopKOrderedProducts(totalSalesPerProduct,(int) session.getAttribute("column_counter"));
-			
-			
 		}
 		else {
 	        // Get mapping of state to total money they spent in purchases, filtered by category.
 			totalSales = StateDAO.getTotalPurchasesPerCategory(states, categoryFilter);
-			
 			products = product.getTopKOrderedProducts(totalSalesPerProductByCategory,(int) session.getAttribute("column_counter"));
-			
-			
 		}
 		
 		// Check if next columns button should be displayed.
@@ -127,7 +122,6 @@ public class SalesAnalyticsController extends HttpServlet {
 		request.setAttribute("totalSales", totalSales);
 		request.setAttribute("totalSalesPerProduct", totalSalesPerProduct);
 	}
-	
 	
 	public void updatePrecomputedTables(HttpServletRequest request, HttpServletResponse response) {
 	

@@ -50,7 +50,7 @@ public class ProductDAO {
             "LIMIT 50 " +
             "OFFSET 50 * ?";
 
-	private static final String DELETE_PRODUCT_BY_ID = "DELETE FROM product WHERE id=?";
+	private static final String DELETE_PRODUCT_BY_ID = "DELETE FROM product WHERE id = ?";
 	
 	private static final String GET_TOTAL_SALES_FOR_EACH_PRODUCT =
             "SELECT p.product_name, COALESCE(totalsale, 0) " +
@@ -510,7 +510,6 @@ public class ProductDAO {
 		PreparedStatement ps = null;
 
 		try {
-
 			ps = ConnectionManager.getConnection().prepareStatement(GET_ALL_PRODUCTS_FROM_CATEGORY_NO_OFFSET);
 			ps.setString(1, category);
 			rs = ps.executeQuery();
@@ -574,10 +573,10 @@ public class ProductDAO {
 				//Get the products in that category.
 				productsByCategory = getProductsFromCategory(filter);
 				
-				while(rs.next()) {
+				while (rs.next()) {
 					//Only add product if the product belongs to the given category.
 					String productName = rs.getString("product_name");
-					if (productsByCategory.contains(productName)){
+					if (productsByCategory.contains(productName)) {
 						totalSalesPerProduct.put(productName, rs.getInt("totalsale"));
 					}	
 				}		
@@ -703,10 +702,10 @@ public class ProductDAO {
      * @return
      */
 	public Map<Pair, BigDecimal> getCosineSimilarityMapAllProducts(
-	        Map<String, Map<String,Integer>> productVectors, HashMap<String,Integer> totalSalesPerProduct,
+	        Map<String, Map<String, Integer>> productVectors, HashMap<String, Integer> totalSalesPerProduct,
             List<String> allProducts) {
 
-		HashMap<String,BigDecimal> cosineSimilarityMap = new HashMap<>();
+		HashMap<String, BigDecimal> cosineSimilarityMap = new HashMap<>();
         MathContext mc = new MathContext(10);
 
 		Map<String, Integer> otherProductVector;
@@ -732,8 +731,8 @@ public class ProductDAO {
 				    	BigDecimal otherProductTotal = new BigDecimal (otherProductVector.get(customer));
 				    	BigDecimal givenProductTotal = new BigDecimal (givenProductVector.get(customer));
 				    	
-				    	BigDecimal tmp = otherProductTotal.multiply(givenProductTotal,mc);
-				    	accumulator = accumulator.add(tmp,mc);
+				    	BigDecimal tmp = otherProductTotal.multiply(givenProductTotal, mc);
+				    	accumulator = accumulator.add(tmp, mc);
 				    }
 
 				    // Divide by (totalSales of givenProduct * totalSales of otherProduct).
@@ -741,7 +740,7 @@ public class ProductDAO {
 				    BigDecimal totalSaleOtherProduct = new BigDecimal(totalSalesPerProduct.get(otherProduct));
 				    BigDecimal cosineSimilarity = new BigDecimal(0);
 
-				    BigDecimal divideBy = totalSaleGivenProduct.multiply(totalSaleOtherProduct,mc);
+				    BigDecimal divideBy = totalSaleGivenProduct.multiply(totalSaleOtherProduct, mc);
 				    if (divideBy.compareTo(new BigDecimal(0)) == 1) {
 				    	cosineSimilarity = accumulator.divide(divideBy,mc);
 				    }
@@ -755,7 +754,7 @@ public class ProductDAO {
 		}
 
 		// Return cosineSimilarityMap.
-		Map<Pair,BigDecimal> sortedPairs = Pair.sortMap(cosinePairs);
+		Map<Pair, BigDecimal> sortedPairs = Pair.sortMap(cosinePairs);
 		return sortedPairs;
 	}
 
@@ -771,11 +770,11 @@ public class ProductDAO {
 	        Map<String, Map<String, Integer>> productVectors, HashMap<String, Integer> totalSalesPerProduct,
             List<String> allProducts) {
 		
-		Map<Pair,BigDecimal> sortedPairs = new TreeMap<>();
+		Map<Pair, BigDecimal> sortedPairs = new TreeMap<>();
 		sortedPairs = getCosineSimilarityMapAllProducts(productVectors, totalSalesPerProduct, allProducts);
 		
 		//Get all entries into a list, then starting from the end of the list, (get 100) and put it back into the map
-		Map<Pair,BigDecimal> sortedPairsDescending = new HashMap<>();
+		Map<Pair, BigDecimal> sortedPairsDescending = new HashMap<>();
 		Pair[] arr = new Pair[100];
 
 		int counter = 1;
