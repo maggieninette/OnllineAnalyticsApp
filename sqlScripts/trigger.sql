@@ -7,7 +7,7 @@ CREATE TABLE log(
     state_name TEXT,
     product_id INTEGER REFERENCES product(id) NOT NULL,
     total INTEGER
-    ); 
+);
     
 CREATE OR REPLACE FUNCTION public.update_log()
 	RETURNS TRIGGER
@@ -31,11 +31,10 @@ BEGIN
 END;
 $BODY$;
 
-DROP TRIGGER IF EXISTS after_update_shoppingcart on shopping_cart;
+DROP TRIGGER IF EXISTS after_update_shopping_cart on shopping_cart;
     
-CREATE TRIGGER after_update_shoppingcart
+CREATE TRIGGER after_update_shopping_cart
     AFTER UPDATE OF is_purchased 
     ON shopping_cart
     FOR EACH ROW
-	EXECUTE PROCEDURE update_log()
-    ;
+	EXECUTE PROCEDURE update_log();
