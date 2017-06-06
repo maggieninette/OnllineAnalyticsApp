@@ -18,6 +18,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import ucsd.shoppingApp.ConnectionManager;
+import ucsd.shoppingApp.PrecomputedCellValues;
+import ucsd.shoppingApp.PrecomputedTopProductSales;
+import ucsd.shoppingApp.PrecomputedTopStateSales;
 import ucsd.shoppingApp.ProductDAO;
 import ucsd.shoppingApp.StateDAO;
 
@@ -92,16 +95,16 @@ public class SalesAnalyticsController extends HttpServlet {
 
 		
 		// Get Map<product id, total sale> for every customer/state and put it in the list.
-		totalSalesPerState = StateDAO.getStateMappingAllProducts(states);
+		totalSalesPerState = StateDAO.getStateMappingAllProducts(states); //OPTIMIZED
 				
 		//Get a mapping of products to total sales made for that product (with/without filter).
-		totalSalesPerProduct = product.getTotalSales(null);
-		totalSalesPerProductByCategory = product.getTotalSales(categoryFilter);
+		totalSalesPerProduct = product.getTotalSales(null); //OPTIMIZED
+		totalSalesPerProductByCategory = product.getTotalSales(categoryFilter); //OPTIMIZED
         
 
 		if (categoryFilter.equals("all_products")) {
 	        // Get mapping of state to total money they spent in purchases.
-			totalSales = StateDAO.getTotalPurchasesAllProducts(states);
+			totalSales = StateDAO.getTotalPurchasesAllProducts(states);  //OPTIMIZED
 			
 			products = product.getTopKOrderedProducts(totalSalesPerProduct,(int) session.getAttribute("column_counter"));
 			
@@ -113,11 +116,8 @@ public class SalesAnalyticsController extends HttpServlet {
 			
 			products = product.getTopKOrderedProducts(totalSalesPerProductByCategory,(int) session.getAttribute("column_counter"));
 			
+			
 		}
-
-
-		//products = product.filterProductbyCategory(categoryFilter, (int) session.getAttribute("column_counter"));
-		
 		
 		
 		// Check if next columns button should be displayed.
@@ -129,6 +129,23 @@ public class SalesAnalyticsController extends HttpServlet {
 		request.setAttribute("cell_values", totalSalesPerState);
 		request.setAttribute("totalSales", totalSales);
 		request.setAttribute("totalSalesPerProduct", totalSalesPerProduct);
+		
+	}
+	
+	
+	public void updatePrecomputedTables(HttpServletRequest request, HttpServletResponse response) {
+	
+		List<String> noLongerTopKProducts = new ArrayList<>();
+		List<String> noLongerTopKStates = new ArrayList<>();
+		HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
+		
+		
+		noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable();
+		noLongerTopKStates = PrecomputedTopStateSales.updateTopStateSalesTable();
+		newCellValues = PrecomputedCellValues.updateCellValues();
+		
+		PrecomputedTopProductSales.clearLogTable(); //Clears the log table.
+		
 		
 	}
 	
@@ -162,6 +179,12 @@ public class SalesAnalyticsController extends HttpServlet {
 			session.removeAttribute("hideNextColsBtn");
 			resetOffset(request, response);
 		}
+		else if (action.equalsIgnoreCase("Refresh")){
+			//Update the precomputed table.
+			updatePrecomputedTables(request,response);
+			
+		}
+
 
 		else {
 

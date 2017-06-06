@@ -97,6 +97,7 @@ public class ProductDAO {
 			con.commit();
 			rs = pstmt.getGeneratedKeys();
 			while (rs.next()) {
+
 				productId = rs.getInt(1);
 			}
 			return productId;
@@ -558,14 +559,15 @@ public class ProductDAO {
 
 		try {
 			stmt = ConnectionManager.getConnection().createStatement();
-			rs = stmt.executeQuery(GET_TOTAL_SALES_FOR_EACH_PRODUCT);
+			rs = stmt.executeQuery("SELECT * FROM TopProductSales ");
 			
 			if (filter==null){
 				while(rs.next()) {
-					totalSalesPerProduct.put(rs.getString("product_name"), rs.getInt(2));
+					totalSalesPerProduct.put(rs.getString("product_name"), rs.getInt("totalsale"));
 				}
 			}
 			else {
+				
 				pt = ConnectionManager.getConnection().prepareStatement(GET_ALL_PRODUCTS_FROM_CATEGORY_NO_OFFSET);
 				pt.setString(1, filter);
 				
@@ -576,13 +578,9 @@ public class ProductDAO {
 					//Only add product if the product belongs to the given category.
 					String productName = rs.getString("product_name");
 					if (productsByCategory.contains(productName)){
-						totalSalesPerProduct.put(productName, rs.getInt(2));
-					}
-					
-					
-				}
-				
-				
+						totalSalesPerProduct.put(productName, rs.getInt("totalsale"));
+					}	
+				}		
 			}
 			
 		} catch (SQLException e) {

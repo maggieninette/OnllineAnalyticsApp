@@ -168,48 +168,33 @@ public class StateDAO {
 	public static HashMap<String, Map <String,Integer>> getStateMappingAllProducts(List<String> states) {
 		
 		HashMap<String, Map<String,Integer>> totalSalesPerState = new HashMap<>();
-		HashMap<Integer, String> productMapping = new HashMap<>();
 
 		PreparedStatement ptst = null;
 		ResultSet rs = null;
-		ResultSet rc = null;
 
 		try {
 			Connection conn = ConnectionManager.getConnection();
-			Statement statement = conn.createStatement();
-		
-			String state;
+
+			String state_name;
 			for (int i = 0; i < states.size(); i++) {
 				HashMap<String, Integer> grandTotal = new HashMap<>();
-				state = states.get(i);
-
-				ptst = conn.prepareStatement(BUILD_TABLE_SQL_NO_OFFSET);
-				ptst.setString(1, state);
-
-					
-				//rs is for getting the table for each state (how much money spent on each product)
+				state_name = states.get(i);
+				
+				ptst = conn.prepareStatement(	"SELECT * "+
+												"FROM cellValues "+
+												"WHERE state_name=?");
+				ptst.setString(1, state_name);	
+				
 				rs = ptst.executeQuery();
-				rc = statement.executeQuery("SELECT * FROM product");
-
-				//getting mapping from product id to product name
-				while (rc.next()) {
-					productMapping.put(rc.getInt(1), rc.getString(3));
-				}
-		
-				int productId;
-				String productName;
+				
 				while (rs.next()) {
-
-					productId = rs.getInt(1);
-					productName = productMapping.get(productId);
-
-					//so in grandTotal, we can look up how much money was spent on each
-					//product by name (each state has a grandTotal map.
-					grandTotal.put(productName, rs.getInt(2));
+					grandTotal.put(rs.getString(2),rs.getInt(3));
 				}
-
-				totalSalesPerState.put(state, grandTotal);
+			
+				totalSalesPerState.put(state_name, grandTotal);
+			
 			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -219,9 +204,6 @@ public class StateDAO {
 				}
 				if (ptst != null) {
 					ptst.close();
-				}
-				if (rc != null) {
-					rs.close();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -239,21 +221,37 @@ public class StateDAO {
     public static Map<String,Integer> getTotalPurchasesAllProducts(List<String> states) {
 
         Map<String, Integer> totalSalesPerState = new HashMap<>();
-		HashMap<String, Map<String,Integer>> stateMapping = getStateMappingAllProducts(states);
-		
-		//stateMapping is a hashmap that maps state to a hashmap of product names, and total purchase for that product.
-		//so, for each state's hashmap, we sum up the purchases...
-		for (Map.Entry<String, Map <String,Integer>> entry : stateMapping.entrySet()) {
-		    String state = entry.getKey();
-		    Map <String, Integer> stateMap = entry.getValue();
-		    
-		    //sum up the values (purchases)
-		    int total = 0;
-		    for (Map.Entry<String, Integer> entry2 : stateMap.entrySet()) {
-		    	total = total + entry2.getValue();
-		    }
 
-		    totalSalesPerState.put(state, total);
+		
+		//Go to the TopStateSales table and for each state get the total purchases. 
+		PreparedStatement ptst = null;
+		ResultSet rs = null;
+		
+		try {	
+			ptst = ConnectionManager.getConnection().prepareStatement(	"SELECT * "+
+																		"FROM TopStateSales ");
+		
+			rs = ptst.executeQuery();
+			
+			while (rs.next()) {
+				totalSalesPerState.put(rs.getString("state_name"), rs.getInt("totalsale"));
+			}
+			
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (ptst != null) {
+					ptst.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 		return totalSalesPerState;
@@ -290,7 +288,7 @@ public class StateDAO {
 		    		total = total + entry2.getValue();
 		    	}
 		    }
-
+		    
 		    totalSalesPerState.put(state, total);
 		}
 		
@@ -313,37 +311,41 @@ public class StateDAO {
 		try{
 			conn = ConnectionManager.getConnection();
 			stmt = conn.createStatement();
-			
-			rs = stmt.executeQuery(STATES_SQL);
-			
-			while (rs.next()) {
-				allStates.add(rs.getString("state_name"));
-			}
 
 			Map<String,Integer> totalSalesPerState;
 			
 			// Check if sales filter had been applied.
 			if (filter.equals("all_products")) {
-				totalSalesPerState = getTotalPurchasesAllProducts(allStates);
+				rs = stmt.executeQuery("SELECT * FROM TopStateSales ");
+				
+				while (rs.next()) {
+					statesTopKSorted.add(rs.getString("state_name"));
+				}	
+				
 			}
 			else {
+				rs = stmt.executeQuery(STATES_SQL);
+				while (rs.next()) {
+					allStates.add(rs.getString("state_name"));
+				}
 				totalSalesPerState = getTotalPurchasesPerCategory(allStates, filter);
-			}
+			
 
-			// Make pairs (state, total money spent) and sort the list.
-			ArrayList<Pair> statesTotalPairs = new ArrayList<>();
-		    for (Map.Entry<String, Integer> entry : totalSalesPerState.entrySet()) {
-		    	Pair stateTotalPair = new Pair(entry.getKey(),entry.getValue());
-		    	statesTotalPairs.add(stateTotalPair);
-		    }
-		    
-		    // Sort list of pairs.
-		    ArrayList<Pair> sortedStateTotalPairs = Pair.bubbleSort(statesTotalPairs);
-		    
-		    // now put it into the statesTopK list. Start from the end of the stateTotalPairs...
-		    for (int j = sortedStateTotalPairs.size() - 1; j >= 0; j--) {
-		    	statesTopKSorted.add(sortedStateTotalPairs.get(j).getKey());
-		    }
+				// Make pairs (state, total money spent) and sort the list.
+				ArrayList<Pair> statesTotalPairs = new ArrayList<>();
+			    for (Map.Entry<String, Integer> entry : totalSalesPerState.entrySet()) {
+			    	Pair stateTotalPair = new Pair(entry.getKey(),entry.getValue());
+			    	statesTotalPairs.add(stateTotalPair);
+			    }
+			    
+			    // Sort list of pairs.
+			    ArrayList<Pair> sortedStateTotalPairs = Pair.bubbleSort(statesTotalPairs);
+			    
+			    // now put it into the statesTopK list. Start from the end of the stateTotalPairs...
+			    for (int j = sortedStateTotalPairs.size() - 1; j >= 0; j--) {
+			    	statesTopKSorted.add(sortedStateTotalPairs.get(j).getKey());
+			    }
+			}
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -368,7 +370,7 @@ public class StateDAO {
 	}
 
     /**
-     * Calls buildCustomersTopKList and gets 20 customers at a time.
+     * Calls buildCustomersTopKList and gets all at a time.
      * @param filter
      * @return
      */

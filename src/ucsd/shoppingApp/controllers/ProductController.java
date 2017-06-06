@@ -68,6 +68,7 @@ public class ProductController extends HttpServlet {
 		request.setAttribute("match_prod_name", sess_match_prod_name);
 
 		if (action.equalsIgnoreCase("insert")) {
+			System.out.println("adding product (in controller)");
 			try {
 				int product_id = -1;
 				product_id = productDAO.addProduct(sku_id, name, Double.parseDouble(price), Integer.parseInt(cat_id),
