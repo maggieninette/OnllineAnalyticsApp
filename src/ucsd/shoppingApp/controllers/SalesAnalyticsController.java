@@ -88,33 +88,54 @@ public class SalesAnalyticsController extends HttpServlet {
         HashMap<String, Map<String, Integer>> totalSalesPerState = new HashMap<>();
         HashMap<String,Integer> totalSalesPerProduct = new HashMap<>();
         HashMap<String,Integer> totalSalesPerProductByCategory = new HashMap<>();
-        String filter;
+    
 
         states = StateDAO.getStatesTopKList(categoryFilter);
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
 
-		// Get Map<product id, total sale> for every customer/state and put it in the list.
+		/** Get Map<product id, total sale> for every state and put it in the list.
+		 * 
+		 */
 		totalSalesPerState = StateDAO.getStateMappingAllProducts(states); //OPTIMIZED
 				
-		//Get a mapping of products to total sales made for that product (with/without filter).
+		/**Get a mapping of products to total sales made for that product (with/without filter).
+		 * 
+		 */
 		totalSalesPerProduct = product.getTotalSales(null); //OPTIMIZED
 		totalSalesPerProductByCategory = product.getTotalSales(categoryFilter); //OPTIMIZED
 
+		
+		/** 1. Get mapping of state to total money they spent in purchases and   
+		 *  2. Get product names
+		 *  ...depending on whether or not a filter was used.
+		 *  
+		 */
 		if (categoryFilter.equals("all_products")) {
-	        // Get mapping of state to total money they spent in purchases.
+	        
 			totalSales = StateDAO.getTotalPurchasesAllProducts(states);  //OPTIMIZED
 			
-			products = product.getTopKOrderedProducts(totalSalesPerProduct,(int) session.getAttribute("column_counter"));
+			products = product.getTopKOrderedProducts(null); //OPTIMIZED
+			
 		}
 		else {
-	        // Get mapping of state to total money they spent in purchases, filtered by category.
+
+			/**A filter was applied so we need to build the precomputed tables for that category
+			 * 
+			 */
+			System.out.println("About to build the precomputedtopstatesales table with filter");
+			PrecomputedTopStateSales.buildPrecomputedTopStateSalesFiltered(categoryFilter);
+			
+			System.out.println("About to build the precomputedtopproductsales table with filter");
+			PrecomputedTopProductSales.buildPrecomputedTopProductSalesFiltered(categoryFilter);
+			PrecomputedStateTopK.buildPrecomputedStateTopKFiltered(categoryFilter);
+			
 			totalSales = StateDAO.getTotalPurchasesPerCategory(states, categoryFilter);
-			products = product.getTopKOrderedProducts(totalSalesPerProductByCategory,(int) session.getAttribute("column_counter"));
+			products = product.getTopKOrderedProducts(categoryFilter); //OPTIMIZED	
 		}
 		
 		// Check if next columns button should be displayed.
-		if (product.filterProductbyCategory(categoryFilter, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
-			session.setAttribute("hideNextColsBtn", true);
+		/*if (product.filterProductbyCategory(categoryFilter, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
+			session.setAttribute("hideNextColsBtn", true);*/
 		
 		request.setAttribute("row_values", states);
 		request.setAttribute("col_values", products);
@@ -124,14 +145,40 @@ public class SalesAnalyticsController extends HttpServlet {
 	}
 	
 	public void updatePrecomputedTables(HttpServletRequest request, HttpServletResponse response) {
-	
+		HttpSession session = request.getSession();
+		String filter = (String) session.getAttribute("filter");
+		List<String> newTopKProducts = new ArrayList<>();
 		List<String> noLongerTopKProducts = new ArrayList<>();
 		List<String> noLongerTopKStates = new ArrayList<>();
-		HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
+		HashMap <String,Integer> updatedCellValues = new HashMap<>();
 		
-		noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable();
-		noLongerTopKStates = PrecomputedTopStateSales.updateTopStateSalesTable();
-		newCellValues = PrecomputedStateTopK.updatePrecomputedStateTopK();
+		if (filter.equals("allproducts")) {
+			newTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable().get(1);
+			noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable().get(2);
+			
+			noLongerTopKStates = PrecomputedTopStateSales.updateTopStateSalesTable(); //-- not necessary to return anything?
+		
+			updatedCellValues = PrecomputedStateTopK.updatePrecomputedStateTopK();
+		}
+		else {
+			newTopKProducts = PrecomputedTopProductSales.updateTopProductSalesFilteredTable().get(1);
+			noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesFilteredTable().get(2);
+			
+			PrecomputedTopStateSales.updateTopStateSalesFilteredTable();
+			
+			updatedCellValues = PrecomputedStateTopK.updatePrecomputedStateTopKFiltered();			
+			
+		}
+		
+	
+		
+		/**
+		 * TO-DO : Update Precomputed tables that use category filter.
+		 * 
+		 */
+		
+		
+		
 		
 		PrecomputedTopProductSales.clearLogTable(); //Clears the log table.
 	}

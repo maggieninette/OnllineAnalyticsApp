@@ -20,6 +20,7 @@ public class PrecomputedTopProductSales {
                 "WHERE logtable.product_id = top_product_sales.product_id " +
                 "AND top_product_sales.product_id = logtable.product_id;";
 	
+	
 	private final static String CREATE_VIEW_OLD_TOP_50 =
             "CREATE OR REPLACE VIEW old_top_50_products AS " +
                     "SELECT product_id AS product_id, product_name AS product_name, totalsale AS total " +
@@ -42,7 +43,85 @@ public class PrecomputedTopProductSales {
                     "FROM new_top_50_products "+
                     ");";
 	
+	private final static String UPDATE_TOP_PRODUCT_SALES_FILTERED =
+            "UPDATE top_product_sales_filtered " +
+            "SET totalsale = top_product_sales_filtered.totalsale + logtable.total " +
+            "FROM " +
+                "(SELECT product_id, SUM(total) AS total " +
+                "FROM log " +
+                "GROUP BY product_id " +
+                ") AS logtable " +
+                "WHERE logtable.product_id = top_product_sales_filtered.product_id " +
+                "AND top_product_sales_filtered.product_id = logtable.product_id;";
+	
+	
+	private final static String CREATE_VIEW_OLD_TOP_50_FILTERED =
+            "CREATE OR REPLACE VIEW old_top_50_products AS " +
+                    "SELECT product_id AS product_id, product_name AS product_name, totalsale AS total " +
+                    "FROM top_product_sales_filtered" +
+                    "ORDER BY total DESC " +
+                    "LIMIT 50;";
+	
+
+	private final static String GET_PRODUCTS_OUT_OF_TOP_50_FILTERED =
+            "CREATE OR REPLACE VIEW new_top_50_products AS " +
+                    "SELECT  product_id AS product_id, product_name AS product_name, totalsale AS total " +
+                    "FROM top_product_sales_filtered " +
+                    "ORDER BY total DESC" +
+                    "LIMIT 50; " +
+		
+                    "SELECT * " +
+                    "FROM old_top_50_products " +
+                    "WHERE product_id NOT IN " +
+                    "(SELECT product_id " +
+                    "FROM new_top_50_products "+
+                    ");";
+
 	private final static String CLEAR_LOG_TABLE = "DELETE FROM log";
+	
+	
+	private final static String DROP_AND_BUILD_PRECOMPUTED_TOPPRODUCTSALES_FILTERED =
+			"DROP TABLE IF EXISTS top_product_sales_filtered; "+
+			"CREATE TABLE top_product_sales_filtered ( "+
+				  "product_id INTEGER, "+
+				  "product_name TEXT, "+
+				  "category_name TEXT, "+
+				  "totalsale INTEGER "+
+			    
+			    "); "+
+	 
+	 
+			"INSERT INTO top_product_sales_filtered( "+
+			"SELECT t2.pr_id as product_id, t2.pr_name as product_name, "+ 
+	    			"t2.c_name as category_name, "+
+	 				"totalsale as total "+
+			"FROM "+ 
+				"( SELECT p.id as p_id, p.product_name AS product_name, "+ 
+	       		   			"c.category_name as category_name "+
+	  				"FROM product p, category c "+  
+	       			"WHERE p.category_id=c.id "+
+	      				"AND c.category_name=?) AS t1 "+
+	  	
+	    			"LEFT OUTER JOIN "+
+	        
+				"( SELECT pr_id as pr_id, pr_name as pr_name, c_name as c_name, SUM(totalsale) AS totalsale "+
+	     			"FROM "+
+	       		  		"( SELECT prod.product_name AS pr_name, p.person_name AS ps_name, prod.id AS pr_id, "+
+	        		  			"(prod.price * pc.quantity) AS totalsale, c.category_name AS c_name "+
+	        				"FROM person p, product prod, shopping_cart sc, products_in_cart pc, category c "+
+	        				"WHERE p.id = sc.person_id "+
+	               				"AND sc.id = pc.cart_id "+
+	                    		"AND prod.category_id=c.id "+
+	               	    		"AND category_name=? "+
+	                    		"AND sc.is_purchased = 'true' "+
+	                    		"AND pc.product_id = prod.id ) AS customerpurchases "+
+	     
+	     			"GROUP BY (pr_id,pr_name,c_name) ) AS t2 "+
+	        
+	      			"ON (t1.p_id,t1.product_name,t1.category_name) = (t2.pr_id,t2.pr_name,t2.c_name) "+
+	     			");";
+	
+	
 	
 	public static void clearLogTable() {
 		PreparedStatement pstmt = null;
@@ -68,10 +147,14 @@ public class PrecomputedTopProductSales {
 	 * This function updates the precomputed TopProductSales table and returns the list 
 	 * of products that are no longer make it to the top 50.
 	 */
-	public static List<String> updateTopProductSalesTable() {
+	public static List<List> updateTopProductSalesTable() {
+		
+		List<List> result = new ArrayList<>();
 		
 		List<String> noLongerTopK = new ArrayList<>();	
+		List<String> newTopK = new ArrayList<>();
 		ResultSet rs = null;
+		ResultSet rc = null;
 		PreparedStatement pstmt = null;
 		Statement stmt = null;
 		
@@ -92,6 +175,17 @@ public class PrecomputedTopProductSales {
 			while (rs.next()) {
 				noLongerTopK.add(rs.getString("product_name"));
 			}
+			
+			//Get the new top 50 products now. 
+			rc = stmt.executeQuery("SELECT * FROM top_product_sales ORDER BY totalsale DESC LIMIT 50 ");
+			
+			while (rc.next()) {
+				newTopK.add(rc.getString("product_name"));
+			}
+			
+			result.add(newTopK);
+			result.add(noLongerTopK);
+
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -104,6 +198,13 @@ public class PrecomputedTopProductSales {
 					e.printStackTrace();
 				}
 			}
+			if (rc != null) {
+				try {
+					rc.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
 			if (pstmt != null) {
 				try {
 					pstmt.close();
@@ -112,7 +213,108 @@ public class PrecomputedTopProductSales {
 				}
 			}
 		}
-	
-		return noLongerTopK;
+		return result;
 	}
+	
+	
+	public static List<List> updateTopProductSalesFilteredTable() {
+		
+		List<List> result = new ArrayList<>();
+		
+		List<String> noLongerTopK = new ArrayList<>();	
+		List<String> newTopK = new ArrayList<>();
+		ResultSet rs = null;
+		ResultSet rc = null;
+		PreparedStatement pstmt = null;
+		Statement stmt = null;
+		
+		try {
+			pstmt = ConnectionManager.getConnection().prepareStatement(UPDATE_TOP_PRODUCT_SALES_FILTERED);
+			stmt = ConnectionManager.getConnection().createStatement();
+			
+			//Create the view for old top 50 products.
+			rs = stmt.executeQuery(CREATE_VIEW_OLD_TOP_50_FILTERED);	
+			
+			//Update the Precomputed TotalProductSales table.
+			pstmt.executeUpdate();		
+			
+			//Get the products that no longer belong in the top 50.
+			rs = stmt.executeQuery(GET_PRODUCTS_OUT_OF_TOP_50_FILTERED);
+			
+			//Put the products in a list. 
+			while (rs.next()) {
+				noLongerTopK.add(rs.getString("product_name"));
+			}
+			
+			//Get the new top 50 products now. 
+			rc = stmt.executeQuery("SELECT * FROM top_product_sales_filtered ORDER BY totalsale DESC LIMIT 50 ");
+			
+			while (rc.next()) {
+				newTopK.add(rc.getString("product_name"));
+			}
+			
+			
+			result.add(newTopK);
+			result.add(noLongerTopK);
+
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally {
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if (rc != null) {
+				try {
+					rc.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if (pstmt != null) {
+				try {
+					pstmt.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return result;
+	}
+	
+	
+	public static void buildPrecomputedTopProductSalesFiltered(String category_name){
+		
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		try{
+			pstmt = ConnectionManager.getConnection().prepareStatement(DROP_AND_BUILD_PRECOMPUTED_TOPPRODUCTSALES_FILTERED);
+			pstmt.setString(1, category_name);
+			pstmt.setString(2, category_name);
+			int tuples = pstmt.executeUpdate();
+		}catch (SQLException e){
+			e.printStackTrace();
+		}finally{
+		
+			if (pstmt != null) {
+				try {
+					pstmt.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+			}
+		}
+		return;
+		
+	}
+	
+
+	
+	
 }
