@@ -34,7 +34,7 @@ public class SimilarProductsController extends HttpServlet {
     	HashMap<String, Map <String, Integer>> customerMapping = person.getCustomerMappingAllProducts(allCustomers);
     	
     	//Get the product vectors
-    	Map<String, Map<String, Integer>> productVectors = product.getVector(customerMapping);
+//    	Map<String, Map<String, Integer>> productVectors = product.getVector(customerMapping);
     	
     	//Get totalSales per product
     	HashMap<String,Integer> totalSalesPerProduct = product.getTotalSales(null);
@@ -43,10 +43,10 @@ public class SimilarProductsController extends HttpServlet {
     	List<String> allProducts = product.getAllProducts();
 
     	//Mapping of product to a hashmap of their cosine similarity with every other product.
-    	Map<Pair, BigDecimal> sortedCosineMap = product.getCosineSimilarity(
-    	        productVectors, totalSalesPerProduct, allProducts);
+//    	Map<Pair, BigDecimal> sortedCosineMap = product.getCosineSimilarity(
+//    	        productVectors, totalSalesPerProduct, allProducts);
 
-    	request.setAttribute("cosineMap", sortedCosineMap);
+//    	request.setAttribute("cosineMap", sortedCosineMap);
     }
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
