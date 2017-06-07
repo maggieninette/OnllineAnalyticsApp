@@ -16,8 +16,11 @@ public class StateDAO {
             "SELECT id, state_name " +
             "FROM state " +
             "ORDER BY state_name";
+	
 
-	private static final String BUILD_TABLE_SQL = 
+	
+
+	/*private static final String BUILD_TABLE_SQL = 
 			"SELECT p.id, COALESCE(SUM(pr.price * pr.quantity), 0) " +
 			"FROM product p LEFT OUTER JOIN products_in_cart pr " +
 			"ON p.id = pr.product_id " +
@@ -45,7 +48,7 @@ public class StateDAO {
 			"		AND st.state_name = ? " +
 			"    AND s.is_purchased = true) " +
 			"GROUP BY p.id " +
-			"ORDER BY p.id ";
+			"ORDER BY p.id "; */
 
     /**
      * Returns states.
@@ -92,7 +95,7 @@ public class StateDAO {
      * @param offset
      * @return
      */
-	public static HashMap<String, Map <String,Integer>> getStateMapping(List<String> states, int offset) {
+	/*public static HashMap<String, Map <String,Integer>> getStateMapping(List<String> states, int offset) {
 		
 		HashMap<String, Map <String,Integer>> totalSalesPerState = new HashMap<>();
 		HashMap<Integer,String> productMapping = new HashMap<>();
@@ -157,7 +160,7 @@ public class StateDAO {
 		}
 
 		return totalSalesPerState;
-	}
+	}*/
 
     /**
      * TODO: Gets a map that maps a state to a map that maps a product name to how much sales
@@ -286,6 +289,8 @@ public class StateDAO {
 		    
 		    totalSalesPerState.put(state, total);
 		}
+		
+		
 		
 		return totalSalesPerState;
 	}

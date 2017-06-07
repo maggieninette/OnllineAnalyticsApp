@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS log;
+DROP TABLE IF EXISTS log CASCADE;
 
 
 CREATE TABLE log(
@@ -35,8 +35,8 @@ END;
 $BODY$;
 
 
-DROP TRIGGER IF EXISTS after_update_shoppingcart on shopping_cart;
-DROP TRIGGER IF EXISTS after_insert_productsincart on products_in_cart;
+DROP TRIGGER IF EXISTS after_update_shoppingcart on shopping_cart CASCADE;
+DROP TRIGGER IF EXISTS after_insert_productsincart on products_in_cart CASCADE;
  
 CREATE TRIGGER after_update_shoppingcart
     AFTER UPDATE OF is_purchased 

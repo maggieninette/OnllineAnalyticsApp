@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS top_product_sales;
+DROP TABLE IF EXISTS top_product_sales CASCADE;
 
 CREATE TABLE top_product_sales(
   product_id INTEGER,
@@ -24,7 +24,7 @@ INSERT INTO top_product_sales(
 );
 
 
-DROP TABLE IF EXISTS top_state_sales;
+DROP TABLE IF EXISTS top_state_sales CASCADE;
 
 CREATE TABLE top_state_sales(
   state_id INTEGER,
@@ -49,7 +49,7 @@ INSERT INTO top_state_sales(
   ORDER BY total_sale desc
 );
 
-DROP TABLE IF EXISTS precomputed_state_topk;
+DROP TABLE IF EXISTS precomputed_state_topk CASCADE;
 
 CREATE TABLE precomputed_state_topk(
   state_name TEXT,

@@ -503,7 +503,7 @@ public class ProductDAO {
      * @return
      */
 	public ArrayList<String> getProductsFromCategory(String category) {
-		System.out.println("getting products from that category");
+		
 		
 	    ArrayList<String> products = new ArrayList<>();
 		ResultSet rs = null;
@@ -518,7 +518,7 @@ public class ProductDAO {
 				
 				String productName = rs.getString("product_name");
 				products.add(productName);
-				System.out.println("product: "+productName+" belongs in category: "+category);
+				
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -601,13 +601,106 @@ public class ProductDAO {
 		
 		return totalSalesPerProduct;
 	}
+	
+	
+	/**
+	 * This function gets the top 50 products. It returns a list of product names in order of descending sales.  
+	 */
+	
+	public List<String> getTopKOrderedProducts(String filter) {
+
+	List<String> topKOrderedProducts = new ArrayList<>();
+	ArrayList<String> productsFromGivenCategory = new ArrayList<>();
+	
+	ResultSet rs = null;
+	Statement st = null;
+	
+		try{
+			st = ConnectionManager.getConnection().createStatement();
+			rs = st.executeQuery("SELECT * FROM top_product_sales ORDER BY totalsale DESC ");
+			
+			if (filter==null) {
+				while (rs.next()) {
+					topKOrderedProducts.add(rs.getString("product_name"));
+				}
+			}
+			else { //A category filter was chosen.
+				productsFromGivenCategory = getProductsFromCategory(filter);
+				while (rs.next()) {
+					String product_name = rs.getString("product_name");
+					
+					if (productsFromGivenCategory.contains(product_name)) {	
+						topKOrderedProducts.add(rs.getString("product_name"));
+					}
+				}
+				
+			}
+			
+		}
+		catch (SQLException e){
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (st != null) {
+					st.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	
+		return topKOrderedProducts;
+	}	
+	
+
+    /**
+     * Returns list of all products no offset.
+     * @return
+     */
+	public List<String> getAllProducts() {
+		List<String> products = new ArrayList<>();
+		
+		ResultSet rs = null;
+		Statement stmt = null;
+		try{
+			stmt = ConnectionManager.getConnection().createStatement();
+			rs = stmt.executeQuery(SELECT_ALL_PRODUCT_SQL);
+			
+			while (rs.next()) {
+				products.add(rs.getString("product_name"));
+			}
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (stmt != null) {
+					stmt.close();
+				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		return products;
+	}
+	
 
     /**
      * Returns map of products and their purchase vector.
      * @param customerMapping
      * @return
      */
-	public Map<String, Map<String, Integer>> getVector(HashMap<String, Map<String, Integer>> customerMapping) {
+	/*public Map<String, Map<String, Integer>> getVector(HashMap<String, Map<String, Integer>> customerMapping) {
 
 	    Map<String, Map<String, Integer>> productVectors = new HashMap<>();
 
@@ -656,43 +749,8 @@ public class ProductDAO {
 		
 		return productVectors;
 	}
+*/
 
-    /**
-     * Returns list of all products no offset.
-     * @return
-     */
-	public List<String> getAllProducts() {
-		List<String> products = new ArrayList<>();
-		
-		ResultSet rs = null;
-		Statement stmt = null;
-		try{
-			stmt = ConnectionManager.getConnection().createStatement();
-			rs = stmt.executeQuery(SELECT_ALL_PRODUCT_SQL);
-			
-			while (rs.next()) {
-				products.add(rs.getString("product_name"));
-			}
-			
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		finally {
-			try {
-				if (rs != null) {
-					rs.close();
-				}
-				if (stmt != null) {
-					stmt.close();
-				}
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-
-		return products;
-	}
 
     /**
      * Returns map of given product to their cosine similarity with every other product.
@@ -701,7 +759,7 @@ public class ProductDAO {
      * @param allProducts
      * @return
      */
-	public Map<Pair, BigDecimal> getCosineSimilarityMapAllProducts(
+	/*public Map<Pair, BigDecimal> getCosineSimilarityMapAllProducts(
 	        Map<String, Map<String, Integer>> productVectors, HashMap<String, Integer> totalSalesPerProduct,
             List<String> allProducts) {
 
@@ -756,7 +814,7 @@ public class ProductDAO {
 		// Return cosineSimilarityMap.
 		Map<Pair, BigDecimal> sortedPairs = Pair.sortMap(cosinePairs);
 		return sortedPairs;
-	}
+	}*/
 
     /**
      * Calls getCosineSimilarityPerProduct on every product. Returns mapping of product to map of product to cosine
@@ -766,7 +824,7 @@ public class ProductDAO {
      * @param allProducts
      * @return
      */
-	public Map<Pair, BigDecimal> getCosineSimilarity(
+	/*public Map<Pair, BigDecimal> getCosineSimilarity(
 	        Map<String, Map<String, Integer>> productVectors, HashMap<String, Integer> totalSalesPerProduct,
             List<String> allProducts) {
 		
@@ -794,9 +852,9 @@ public class ProductDAO {
 		}
 
 		return sortedPairsDescending;
-	}
+	}*/
 	
-	public List<String> getTopKOrderedProducts(HashMap<String, Integer> totalSalesPerProduct, int offset) {
+	/*public List<String> getTopKOrderedProducts(HashMap<String, Integer> totalSalesPerProduct, int offset) {
 
 		List<String> topKOrderedProducts = new ArrayList<>();
 		
@@ -826,5 +884,6 @@ public class ProductDAO {
 	    }
 		
 		return topKOrderedProducts;
-	}
+	}*/
+	
 }

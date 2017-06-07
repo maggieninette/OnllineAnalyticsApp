@@ -172,13 +172,11 @@ public class SalesAnalyticsController extends HttpServlet {
 			
 		}
 		
-	
-		
 		/**
 		 * TO-DO : Update Precomputed tables that use category filter.
 		 * 
 		 */
-		
+
 		PrecomputedTopProductSales.clearLogTable(); //Clears the log table.
 	}
 
@@ -196,8 +194,9 @@ public class SalesAnalyticsController extends HttpServlet {
 
         // Get products no longer in top 50.
         List<String> noLongerTopKProductsSample = new ArrayList<>();
-        noLongerTopKProductsSample.add("PROD_4527");
-        noLongerTopKProductsSample.add("PROD_2896");
+
+        noLongerTopKProductsSample.add("PROD_64");
+        noLongerTopKProductsSample.add("PROD_477");
 
         // Get updated total sale prices.
         Map<String, Double> updatedTotalSalePrices = new HashMap<>();
@@ -210,13 +209,13 @@ public class SalesAnalyticsController extends HttpServlet {
         String noLongerTopKProductsJson = gson.toJson(noLongerTopKProductsSample);
         String updatedTotalSalePricesJson = gson.toJson(updatedTotalSalePrices);
 
-
         String jsonResponse = null;
 
         // Send response as JSON.
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
-        out.print(jsonResponse);
+
+        out.print(noLongerTopKProductsJson);
         out.close();
 	}
 

@@ -18,12 +18,102 @@ public class PrecomputedStateTopK {
 														"AND precomputed_state_topk.product_name=log.product_name";
 	
 	
-	public static HashMap<String, Map <String,Integer>> updatePrecomputedStateTopK(){
+	private final static String DROP_AND_BUILD_PRECOMPUTED_STATETOPK_FILTERED =
+			"DROP TABLE IF EXISTS precomputed_state_topk_filtered; "+
+
+			"CREATE TABLE precomputed_state_topk_filtered( "+
+			  "state_name TEXT, "+
+			  "product_name TEXT, "+
+			  "total INTEGER "+
+			"); "+
+			
+			
+			" INSERT INTO precomputed_state_topk_filtered( "+	
+			"SELECT allproductsandstates.state_name AS state_name, allproductsandstates.product_name AS product_name, COALESCE(total,0) AS total "+
+			 "FROM "+
+			    "(SELECT state_name AS state_name, product_name AS product_name "+
+			    "FROM product, state, category "+
+			     "WHERE product.category_id = category.id "+
+			     "AND category.category_name=?) AS allproductsandstates "+
+			    
+			    
+			    "LEFT OUTER JOIN "+
+			      "(SELECT st.state_name AS state_name, p2.product_name AS product_name, SUM(pc.quantity * pc.price) AS total "+
+			      "FROM shopping_cart sc2, products_in_cart pc, product p2, person p, state st, category c "+
+			      "WHERE pc.cart_id = sc2.id "+
+			      "AND pc.product_id = p2.id "+
+			      "AND p2.category_id = c.id "+
+			      "AND c.category_name=? "+
+			      "AND sc2.person_id = p.id "+
+			      "AND p.state_id = st.id "+
+			      "GROUP BY (st.state_name,p2.product_name) "+
+			      "ORDER BY p2.product_name "+
+			    ") AS salesmade "+
+			    "ON allproductsandstates.state_name = salesmade.state_name "+
+			    "AND allproductsandstates.product_name = salesmade.product_name "+
+			    ")";
+	
+	
+	private final static String GET_SALE = "SELECT total "+
+			 						"FROM precomputed_state_topk "+
+			 						"WHERE state_name=? "+
+			 						"AND product_name=?";
+			 						
+	private final static String UPDATE_CELL_VALUES_FILTERED = 	
+			"UPDATE precomputed_state_topk_filtered "+
+			"SET total = precomputed_state_topk_filtered.total+log.total "+
+			"FROM log "+
+			"WHERE log.state_name=precomputed_state_topk_filtered.state_name "+
+			"AND precomputed_state_topk_filtered.product_name=log.product_name";
+	
+	
+	private final static String GET_SALE_FILTERED = "SELECT total "+
+													"FROM precomputed_state_topk_filtered "+
+													"WHERE state_name=? "+
+													"AND product_name=?";
+	
+	public static void buildPrecomputedStateTopKFiltered(String category_name){
+		
+		PreparedStatement pstmt = null;
 		ResultSet rs = null;
+		try{
+			pstmt = ConnectionManager.getConnection().prepareStatement(DROP_AND_BUILD_PRECOMPUTED_STATETOPK_FILTERED);
+			pstmt.setString(1, category_name);
+			pstmt.setString(2, category_name);
+			int tuples = pstmt.executeUpdate();
+		}catch (SQLException e){
+			e.printStackTrace();
+		}finally{
+		
+			if (pstmt != null) {
+				try {
+					pstmt.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+			}
+		}
+		return;
+		
+	}
+	
+	
+	/**
+	 * This function updates the Precomputed state_topk table and returns the js ids mapped to the new values.
+	 * 
+	 * @return
+	 */
+	
+	public static HashMap<String, Integer> updatePrecomputedStateTopK(){
+		ResultSet rs = null;
+		ResultSet rc = null;
 		PreparedStatement pstmt = null;
 		Statement stmt = null;
-		HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
-		ArrayList<String> states = new ArrayList<>();
+		//HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
+		//ArrayList<String> states = new ArrayList<>();
+		
+		HashMap<String,Integer> updatedCells = new HashMap<>();
 		
 		try {
 			Connection conn = ConnectionManager.getConnection();
@@ -31,13 +121,32 @@ public class PrecomputedStateTopK {
 			
 			pstmt.executeQuery();
 			
-			rs = stmt.executeQuery("SELECT * FROM state");
+			/*rs = stmt.executeQuery("SELECT * FROM state");
+			
+			
 			while (rs.next()) {
 				states.add(rs.getString("state_name"));
 			}
 			
-			newCellValues = StateDAO.getStateMappingAllProducts(states);
-	
+			newCellValues = StateDAO.getStateMappingAllProducts(states);*/
+			
+			pstmt = conn.prepareStatement(GET_SALE);
+			rs = stmt.executeQuery("SELECT * FROM log");
+			
+			while (rs.next()) {
+				String state_name = rs.getString("state_name");
+			    String product_name = rs.getString("product_name");
+			    
+			    pstmt.setString(1, state_name);
+			    pstmt.setString(2,product_name);
+			    
+			    rc = pstmt.executeQuery();
+			    int newTotal = rc.getInt(1);
+			    
+			    
+			    updatedCells.put(state_name+product_name,newTotal);	    
+				
+			}
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -46,6 +155,14 @@ public class PrecomputedStateTopK {
 			if (rs != null) {
 				try {
 					rs.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			if (rc != null) {
+				try {
+					rc.close();
 				} catch (SQLException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -60,7 +177,73 @@ public class PrecomputedStateTopK {
 			}
 			
 		}
-		return newCellValues;
+		return updatedCells;
+	}
+	
+	public static HashMap<String, Integer> updatePrecomputedStateTopKFiltered(){
+		ResultSet rs = null;
+		ResultSet rc = null;
+		PreparedStatement pstmt = null;
+		Statement stmt = null;
+		//HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
+		//ArrayList<String> states = new ArrayList<>();
+		
+		HashMap<String,Integer> updatedCells = new HashMap<>();
+		
+		try {
+			Connection conn = ConnectionManager.getConnection();
+			pstmt = conn.prepareStatement(UPDATE_CELL_VALUES_FILTERED);
+			
+			pstmt.executeQuery();
+
+			pstmt = conn.prepareStatement(GET_SALE_FILTERED);
+			rs = stmt.executeQuery("SELECT * FROM log");
+			
+			while (rs.next()) {
+				String state_name = rs.getString("state_name");
+			    String product_name = rs.getString("product_name");
+			    
+			    pstmt.setString(1, state_name);
+			    pstmt.setString(2,product_name);
+			    
+			    rc = pstmt.executeQuery();
+			    int newTotal = rc.getInt(1);
+			    
+			    
+			    updatedCells.put(state_name+product_name,newTotal);	    
+				
+			}
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally{
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			if (rc != null) {
+				try {
+					rc.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			if (pstmt != null) {
+				try {
+					pstmt.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+		}
+		return updatedCells;
 	}
 	
 	
