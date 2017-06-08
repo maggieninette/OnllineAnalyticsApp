@@ -1,5 +1,7 @@
 package ucsd.shoppingApp;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -165,10 +167,12 @@ public class StateDAO {
     /**
      * TODO: Gets a map that maps a state to a map that maps a product name to how much sales
      * 		 were made for that product. (Every state has a map (key:product, value:total sale)
+     *		
      * @param states
      * @return
      */
 	public static HashMap<String, Map <String,Integer>> getStateMappingAllProducts(List<String> states) {
+		
 		
 		HashMap<String, Map<String,Integer>> totalSalesPerState = new HashMap<>();
 
@@ -233,7 +237,8 @@ public class StateDAO {
 			rs = ptst.executeQuery();
 			
 			while (rs.next()) {
-				totalSalesPerState.put(rs.getString("state_name"), rs.getInt("totalsale"));
+				//totalSalesPerState.put(rs.getString("state_name"),rs.getInt("totalsale")); TEST
+				totalSalesPerState.put(rs.getString("state_name"),1);
 			}
 			
 		}
@@ -257,12 +262,13 @@ public class StateDAO {
 	}
 
     /**
-     * Returns mapping of state name to total purchases made by customers from each state for a specific category.
+     * Returns mapping of state name to total purchases made in each state for a specific category.
      * @param states
      * @param category
      * @return
      */
 	public static Map<String, Integer> getTotalPurchasesPerCategory(List<String> states, String category) {
+		
 
 	    Map<String, Integer> totalSalesPerState = new HashMap<>();
 		HashMap<String, Map<String,Integer>> stateMapping = getStateMappingAllProducts(states);

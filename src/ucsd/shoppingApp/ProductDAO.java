@@ -546,7 +546,7 @@ public class ProductDAO {
      * Returns map of products and their total sales from all customers.
      * @return
      */
-	public HashMap<String,Integer> getTotalSales(String filter) {
+	public HashMap<String,Integer> getTotalSales(List<String> products) {
 
 	    HashMap<String, Integer> totalSalesPerProduct = new HashMap<>();
 		
@@ -558,28 +558,18 @@ public class ProductDAO {
 
 		try {
 			stmt = ConnectionManager.getConnection().createStatement();
-			rs = stmt.executeQuery("SELECT * FROM top_product_sales ");
 			
-			if (filter == null) {
-				while (rs.next()) {
-					totalSalesPerProduct.put(rs.getString("product_name"), rs.getInt("totalsale"));
-				}
-			}
-			else {
+			pt = ConnectionManager.getConnection().prepareStatement("SELECT * FROM top_product_sales WHERE product_name=? ");
+			
+			for (int i =0; i < products.size(); i++) {
+				String product_name = products.get(i);
+				pt.setString(1, product_name);
 				
-				pt = ConnectionManager.getConnection().prepareStatement(GET_ALL_PRODUCTS_FROM_CATEGORY_NO_OFFSET);
-				pt.setString(1, filter);
+				rs = pt.executeQuery();
 				
-				//Get the products in that category.
-				productsByCategory = getProductsFromCategory(filter);
+				rs.next();
+				totalSalesPerProduct.put(product_name, rs.getInt("totalsale"));
 				
-				while (rs.next()) {
-					//Only add product if the product belongs to the given category.
-					String productName = rs.getString("product_name");
-					if (productsByCategory.contains(productName)) {
-						totalSalesPerProduct.put(productName, rs.getInt("totalsale"));
-					}	
-				}		
 			}
 			
 		} catch (SQLException e) {
@@ -614,24 +604,29 @@ public class ProductDAO {
 	
 	ResultSet rs = null;
 	Statement st = null;
+	PreparedStatement pt = null;
 	
 		try{
 			st = ConnectionManager.getConnection().createStatement();
-			rs = st.executeQuery("SELECT * FROM top_product_sales ORDER BY totalsale DESC ");
+			
 			
 			if (filter==null) {
+				rs = st.executeQuery("SELECT * FROM top_product_sales ORDER BY totalsale DESC LIMIT 50 ");
 				while (rs.next()) {
 					topKOrderedProducts.add(rs.getString("product_name"));
 				}
 			}
 			else { //A category filter was chosen.
-				productsFromGivenCategory = getProductsFromCategory(filter);
+				pt = ConnectionManager.getConnection().prepareStatement("SELECT * "+
+																		"FROM top_product_sales_filtered "+
+																		"WHERE category_name=? "+
+																		"ORDER BY totalsale DESC" +
+																		"LIMIT 50 ");
+				pt.setString(1, filter);
+				rs = pt.executeQuery();
+				
 				while (rs.next()) {
-					String product_name = rs.getString("product_name");
-					
-					if (productsFromGivenCategory.contains(product_name)) {	
-						topKOrderedProducts.add(rs.getString("product_name"));
-					}
+					topKOrderedProducts.add(rs.getString("product_name"));
 				}
 				
 			}
@@ -647,6 +642,9 @@ public class ProductDAO {
 				}
 				if (st != null) {
 					st.close();
+				}
+				if (pt != null) {
+					pt.close();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();

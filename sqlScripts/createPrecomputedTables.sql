@@ -1,9 +1,25 @@
 DROP TABLE IF EXISTS top_product_sales CASCADE;
+DROP TABLE IF EXISTS new_top_50_products CASCADE;
+DROP TABLE IF EXISTS old_top_50_products CASCADE;
+
+
+CREATE TABLE new_top_50_products (
+  product_id BIGSERIAL,
+  product_name TEXT,
+  totalsale BIGSERIAL
+    );
+
+CREATE TABLE old_top_50_products (
+  product_id BIGSERIAL,
+  product_name TEXT,
+  totalsale BIGSERIAL
+    );
+
 
 CREATE TABLE top_product_sales(
-  product_id INTEGER,
+  product_id BIGSERIAL,
   product_name TEXT,
-  totalsale INTEGER
+  totalsale BIGSERIAL
 );
 
 INSERT INTO top_product_sales(
@@ -27,9 +43,9 @@ INSERT INTO top_product_sales(
 DROP TABLE IF EXISTS top_state_sales CASCADE;
 
 CREATE TABLE top_state_sales(
-  state_id INTEGER,
+  state_id BIGSERIAL,
   state_name TEXT,
-  totalsale INTEGER
+  totalsale BIGSERIAL
 );
 
 INSERT INTO top_state_sales(
@@ -54,7 +70,7 @@ DROP TABLE IF EXISTS precomputed_state_topk CASCADE;
 CREATE TABLE precomputed_state_topk(
   state_name TEXT,
   product_name TEXT,
-  total INTEGER
+  total BIGSERIAL
 );
 
 INSERT INTO precomputed_state_topk(
