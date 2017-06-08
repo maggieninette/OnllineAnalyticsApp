@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class PrecomputedTopProductSales {
@@ -54,57 +55,9 @@ public class PrecomputedTopProductSales {
 	
 
 //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-
 	
-	private final static String UPDATE_TOP_PRODUCT_SALES_FILTERED =
-            "UPDATE top_product_sales_filtered " +
-            "SET totalsale = top_product_sales_filtered.totalsale + logtable.total " +
-            "FROM " +
-                "(SELECT product_id, SUM(total) AS total " +
-                "FROM log " +
-                "GROUP BY product_id " +
-                ") AS logtable " +
-                "WHERE logtable.product_id = top_product_sales_filtered.product_id " +
-                "AND top_product_sales_filtered.product_id = logtable.product_id;";
-	
-	
-	private final static String CREATE_VIEW_OLD_TOP_50_FILTERED =
-            "CREATE OR REPLACE VIEW old_top_50_products AS " +
-                    "SELECT product_id AS product_id, product_name AS product_name, totalsale AS total " +
-                    "FROM top_product_sales_filtered" +
-                    "ORDER BY total DESC " +
-                    "LIMIT 50;";
-	
-
-	private final static String GET_PRODUCTS_OUT_OF_TOP_50_FILTERED =
-            "CREATE OR REPLACE VIEW new_top_50_products AS " +
-                    "SELECT  product_id AS product_id, product_name AS product_name, totalsale AS total " +
-                    "FROM top_product_sales_filtered " +
-                    "ORDER BY total DESC" +
-                    "LIMIT 50; " +
-		
-                    "SELECT * " +
-                    "FROM old_top_50_products " +
-                    "WHERE product_id NOT IN " +
-                    "(SELECT product_id " +
-                    "FROM new_top_50_products "+
-                    ")  "+
-                    "LIMIT "
-                    + ";";
-
-	
-	
-	private final static String DROP_AND_BUILD_PRECOMPUTED_TOPPRODUCTSALES_FILTERED =
-			"DROP TABLE IF EXISTS top_product_sales_filtered; "+
-			"CREATE TABLE top_product_sales_filtered ( "+
-				  "product_id INTEGER, "+
-				  "product_name TEXT, "+
-				  "category_name TEXT, "+
-				  "totalsale INTEGER "+
-			    
-			    "); "+
-	 
+	private static final String DELETE_AND_INSERT_INTO_PRECOMPUTED_TOP_PRODUCT_SALES_FILTERED =	
+			"DELETE FROM top_product_sales_filtered; "+
 	 
 			"INSERT INTO top_product_sales_filtered( "+
 			"SELECT t2.pr_id as product_id, t2.pr_name as product_name, "+ 
@@ -136,13 +89,39 @@ public class PrecomputedTopProductSales {
 	      			"ON (t1.p_id,t1.product_name,t1.category_name) = (t2.pr_id,t2.pr_name,t2.c_name) "+
 	     			");";
 	
+
+	private final static String UPDATE_TOP_50_PRODUCTS_FILTERED =
+
+		    "UPDATE top_product_sales_filtered "+ 
+		    "SET totalsale = top_product_sales_filtered.totalsale + logtable.total  "+
+		    "FROM  "+
+		        "(SELECT product_id, SUM(total) AS total "+ 
+		        "FROM log  "+
+		        "GROUP BY product_id  "+
+		        ") AS logtable  "+
+		        "WHERE logtable.product_id = top_product_sales_filtered.product_id  "+
+		        "AND top_product_sales_filtered.product_id = logtable.product_id ";
+
+	private final static String INSERT_INTO_OLD_TOP_50_FILTERED = 		
+			"INSERT INTO old_top_50_products (product_id, product_name, totalsale) "+ 
+			"SELECT product_id AS product_id, product_name AS product_name, totalsale AS total "+ 
+		    "FROM top_product_sales_filtered "+ 
+		    "ORDER BY total DESC "+ 
+		    "LIMIT 50 ";
+	
+	private final static String INSERT_INTO_NEW_TOP_50_FILTERED =	
+		    "INSERT INTO new_top_50_products (product_id, product_name, totalsale) "+ 
+		    "SELECT product_id AS product_id, product_name AS product_name, totalsale AS total  "+
+		    "FROM top_product_sales_filtered "+
+		    "ORDER BY total DESC "+ 
+		    "LIMIT 50 ";	
 	
 
 	/*
 	 * This function updates the precomputed TopProductSales table and returns the list 
 	 * of products that are no longer make it to the top 50.
 	 */
-	public static List<List> updateTopProductSalesTable() {
+	public static List<String> updateTopProductSalesTable() {
 		System.out.println("entered update method for top_product_sales");
 		
 		
@@ -202,17 +181,12 @@ public class PrecomputedTopProductSales {
 				noLongerTopK.add(product_name);
 			}
 
-			//Get the new top 50 products now. 
-			rc = stmt.executeQuery("SELECT * FROM top_product_sales ORDER BY totalsale DESC LIMIT 50 ");
 			
-			while (rc.next()) {
-				
-				newTopK.add(rc.getString("product_name"));
-			}
+			//System.out.println("adding the 2 lists");
+			//result.add(newTopK);
+			//result.add(noLongerTopK);
 			
-			System.out.println("adding the 2 lists");
-			result.add(newTopK);
-			result.add(noLongerTopK);
+		
 			
 			con.commit();
 			con.setAutoCommit(true);
@@ -269,12 +243,60 @@ public class PrecomputedTopProductSales {
 		}
 		
 
-		return result;
+		return noLongerTopK;
+	}
+	
+	/**
+	 * 
+	 * @return The map of new products that made it into the top 50 and their total sales. 
+	 */
+	
+	public static HashMap <String, Integer> getNewTop50Products(){
+		HashMap <String, Integer> newTop50 = new HashMap<>();
+		
+		Statement stmt = null;
+		ResultSet rs = null;
+		
+		try{
+			
+			stmt = ConnectionManager.getConnection().createStatement();
+			rs = stmt.executeQuery(	"SELECT * "+
+									"FROM new_top_50_products "+
+									"WHERE product_id "+
+									"NOT IN ("+
+									"		SELECT product_id "+
+									"		FROM old_top_50_products )" );
+			
+			while (rs.next()) {
+				newTop50.put(rs.getString("product_name"), rs.getInt("totalsale"));
+			}
+			
+			
+		}catch (SQLException e) {
+			
+		}finally{
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if (stmt != null) {
+				try {
+					stmt.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			
+			}
+		}
+		return newTop50;
 	}
 	
 	
-	public static List<List> updateTopProductSalesFilteredTable() {
-		
+	public static List<String> updateTopProductSalesFilteredTable() {
+
 		List<List> result = new ArrayList<>();
 		
 		List<String> noLongerTopK = new ArrayList<>();	
@@ -282,36 +304,64 @@ public class PrecomputedTopProductSales {
 		ResultSet rs = null;
 		ResultSet rc = null;
 		PreparedStatement pstmt = null;
+		PreparedStatement ps = null;
 		Statement stmt = null;
+
+		Connection con = null;
 		
 		try {
-			pstmt = ConnectionManager.getConnection().prepareStatement(UPDATE_TOP_PRODUCT_SALES_FILTERED);
-			stmt = ConnectionManager.getConnection().createStatement();
+			con = ConnectionManager.getConnection();
+			con.setAutoCommit(false);
 			
-			//Create the view for old top 50 products.
-			rs = stmt.executeQuery(CREATE_VIEW_OLD_TOP_50_FILTERED);	
+			stmt = con.createStatement();
 			
-			//Update the Precomputed TotalProductSales table.
-			pstmt.executeUpdate();		
+			pstmt = con.prepareStatement(DELETE_OLD_TOP_50);			
+			pstmt.executeUpdate();
+			pstmt.close();
+			
+			
+			pstmt = con.prepareStatement(DELETE_NEW_TOP_50);			
+			pstmt.executeUpdate();
+			pstmt.close();
+			
+			
+			pstmt = con.prepareStatement(INSERT_INTO_OLD_TOP_50_FILTERED);			
+			pstmt.executeUpdate();
+			pstmt.close();
+			
+			pstmt = con.prepareStatement(UPDATE_TOP_50_PRODUCTS_FILTERED);			
+			pstmt.executeUpdate();
+			pstmt.close();
+			
+			pstmt = con.prepareStatement(CLEAR_LOG);			
+			pstmt.executeUpdate();
+			pstmt.close();
+			
+			pstmt = con.prepareStatement(INSERT_INTO_NEW_TOP_50_FILTERED);			
+			pstmt.executeUpdate();
+			pstmt.close();
 			
 			//Get the products that no longer belong in the top 50.
-			rs = stmt.executeQuery(GET_PRODUCTS_OUT_OF_TOP_50_FILTERED);
-			
+			rs = stmt.executeQuery(GET_PRODUCTS_OUT_OF_TOP_50);
+
+
 			//Put the products in a list. 
 			while (rs.next()) {
-				noLongerTopK.add(rs.getString("product_name"));
+				
+				String product_name = rs.getString("product_name");
+				System.out.println("these products don't belong in top 50 : "+product_name);
+				noLongerTopK.add(product_name);
 			}
+
 			
-			//Get the new top 50 products now. 
-			rc = stmt.executeQuery("SELECT * FROM top_product_sales_filtered ORDER BY totalsale DESC LIMIT 50 ");
+			//System.out.println("adding the 2 lists");
+			//result.add(newTopK);
+			//result.add(noLongerTopK);
 			
-			while (rc.next()) {
-				newTopK.add(rc.getString("product_name"));
-			}
+		
 			
-			
-			result.add(newTopK);
-			result.add(noLongerTopK);
+			con.commit();
+			con.setAutoCommit(true);
 
 		}
 		catch (SQLException e) {
@@ -332,6 +382,13 @@ public class PrecomputedTopProductSales {
 					e.printStackTrace();
 				}
 			}
+			if (ps != null) {
+				try {
+					ps.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
 			if (pstmt != null) {
 				try {
 					pstmt.close();
@@ -339,8 +396,26 @@ public class PrecomputedTopProductSales {
 					e.printStackTrace();
 				}
 			}
+			if (stmt != null) {
+				try {
+					stmt.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			
+			}
+			if (con != null) {
+				try {
+					con.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
 		}
-		return result;
+		
+
+		return noLongerTopK;
 	}
 	
 	
@@ -348,11 +423,23 @@ public class PrecomputedTopProductSales {
 		
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
+		Connection con = null;
+		
+		
 		try{
-			pstmt = ConnectionManager.getConnection().prepareStatement(DROP_AND_BUILD_PRECOMPUTED_TOPPRODUCTSALES_FILTERED);
+			
+			con = ConnectionManager.getConnection();
+			con.setAutoCommit(false);
+			
+			
+			pstmt = con.prepareStatement(DELETE_AND_INSERT_INTO_PRECOMPUTED_TOP_PRODUCT_SALES_FILTERED);
 			pstmt.setString(1, category_name);
 			pstmt.setString(2, category_name);
-			int tuples = pstmt.executeUpdate();
+			pstmt.executeUpdate();
+			
+			con.commit();
+			con.setAutoCommit(true);
+			
 		}catch (SQLException e){
 			e.printStackTrace();
 		}finally{
@@ -360,6 +447,14 @@ public class PrecomputedTopProductSales {
 			if (pstmt != null) {
 				try {
 					pstmt.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+			}
+			if (con != null) {
+				try {
+					con.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

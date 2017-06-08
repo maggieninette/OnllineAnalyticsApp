@@ -2,6 +2,26 @@ DROP TABLE IF EXISTS top_product_sales CASCADE;
 DROP TABLE IF EXISTS new_top_50_products CASCADE;
 DROP TABLE IF EXISTS old_top_50_products CASCADE;
 
+CREATE TABLE top_product_sales_filtered(
+  product_id BIGSERIAL,
+  product_name TEXT,
+  category_name TEXT,
+  totalsale BIGSERIAL
+);
+CREATE TABLE top_state_sales_filtered(
+  state_id BIGSERIAL,
+  state_name TEXT,
+  category_name TEXT,
+  totalsale BIGSERIAL
+);
+
+CREATE TABLE precomputed_state_topk_filtered(
+  state_name TEXT,
+  product_name TEXT,
+  total BIGSERIAL
+);
+
+
 
 CREATE TABLE new_top_50_products (
   product_id BIGSERIAL,

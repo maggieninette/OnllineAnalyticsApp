@@ -12,8 +12,8 @@ public class Pair {
 
     private String key;
     private int value;
-    private String product1;
-    private String product2;
+    private String value1;
+    private String value2;
     private Pair productsPair;
     private BigDecimal cosineSimilarity;
 
@@ -22,10 +22,18 @@ public class Pair {
         this.value = value;
     }
     
-    public Pair(String product1, String roduct2) {
-    	this.product1= product1;
-    	this.product2 = product2;
+    public Pair(String value1, String value2) {
+    	this.value1= value1;
+    	this.value2 = value2;
     }
+    public String getValue1() {
+        return value1;
+    }
+    public String getValue2() {
+        return value2;
+    }    
+    
+    
 
     public Pair(Pair products, BigDecimal cosineSimilarity) {
     	this.productsPair = products;
@@ -39,14 +47,14 @@ public class Pair {
     public int getValue() {
         return value;
     }
-    
+ /*   
     public String getProduct1() {
         return product1;
     }
 
     public String getProduct2() {
         return product2;
-    }
+    }*/
     
     public Pair getPair() {
         return productsPair;

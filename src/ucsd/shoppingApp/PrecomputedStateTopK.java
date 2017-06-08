@@ -18,15 +18,8 @@ public class PrecomputedStateTopK {
 														"AND precomputed_state_topk.product_name=log.product_name";
 	
 	
-	private final static String DROP_AND_BUILD_PRECOMPUTED_STATETOPK_FILTERED =
-			"DROP TABLE IF EXISTS precomputed_state_topk_filtered; "+
-
-			"CREATE TABLE precomputed_state_topk_filtered( "+
-			  "state_name TEXT, "+
-			  "product_name TEXT, "+
-			  "total INTEGER "+
-			"); "+
-			
+	private final static String DELETE_AND_INSERT_INTO_PRECOMPUTED_STATETOPK_FILTERED =
+			"DELETE FROM precomputed_state_topk; "+
 			
 			" INSERT INTO precomputed_state_topk_filtered( "+	
 			"SELECT allproductsandstates.state_name AS state_name, allproductsandstates.product_name AS product_name, COALESCE(total,0) AS total "+
@@ -76,11 +69,23 @@ public class PrecomputedStateTopK {
 		
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
+		Connection con = null;
+		
+		
+		
 		try{
-			pstmt = ConnectionManager.getConnection().prepareStatement(DROP_AND_BUILD_PRECOMPUTED_STATETOPK_FILTERED);
+			con = ConnectionManager.getConnection();
+			con.setAutoCommit(false);
+			
+			pstmt = con.prepareStatement(DELETE_AND_INSERT_INTO_PRECOMPUTED_STATETOPK_FILTERED);
 			pstmt.setString(1, category_name);
 			pstmt.setString(2, category_name);
-			int tuples = pstmt.executeUpdate();
+			pstmt.executeUpdate();
+			
+			con.commit();
+			con.setAutoCommit(true);
+			
+			
 		}catch (SQLException e){
 			e.printStackTrace();
 		}finally{
@@ -88,6 +93,14 @@ public class PrecomputedStateTopK {
 			if (pstmt != null) {
 				try {
 					pstmt.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+			}
+			if (con != null) {
+				try {
+					con.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -114,9 +127,12 @@ public class PrecomputedStateTopK {
 		//ArrayList<String> states = new ArrayList<>();
 		
 		HashMap<String,Integer> updatedCells = new HashMap<>();
+		Connection conn = null;
 		
 		try {
-			Connection conn = ConnectionManager.getConnection();
+			conn = ConnectionManager.getConnection();
+			conn.setAutoCommit(false);
+			
 			pstmt = conn.prepareStatement(UPDATE_CELL_VALUES);
 			
 			pstmt.executeQuery();
@@ -143,10 +159,13 @@ public class PrecomputedStateTopK {
 			    rc = pstmt.executeQuery();
 			    int newTotal = rc.getInt(1);
 			    
-			    
+
 			    updatedCells.put(state_name+product_name,newTotal);	    
 				
 			}
+			
+			conn.commit();
+			conn.setAutoCommit(true);
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -175,10 +194,22 @@ public class PrecomputedStateTopK {
 					e.printStackTrace();
 				}
 			}
+			if (conn != null) {
+				try {
+					conn.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 			
 		}
 		return updatedCells;
 	}
+	
+	/**
+	 * 
+	 * @return returns the js ids mapped to the new values.
+	 */
 	
 	public static HashMap<String, Integer> updatePrecomputedStateTopKFiltered(){
 		ResultSet rs = null;
@@ -189,9 +220,12 @@ public class PrecomputedStateTopK {
 		//ArrayList<String> states = new ArrayList<>();
 		
 		HashMap<String,Integer> updatedCells = new HashMap<>();
+		Connection conn = null;
 		
 		try {
-			Connection conn = ConnectionManager.getConnection();
+			conn = ConnectionManager.getConnection();
+			
+			conn.setAutoCommit(false);
 			pstmt = conn.prepareStatement(UPDATE_CELL_VALUES_FILTERED);
 			
 			pstmt.executeQuery();
@@ -213,6 +247,10 @@ public class PrecomputedStateTopK {
 			    updatedCells.put(state_name+product_name,newTotal);	    
 				
 			}
+			
+			
+			conn.commit();
+			conn.setAutoCommit(true);
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -237,6 +275,13 @@ public class PrecomputedStateTopK {
 			if (pstmt != null) {
 				try {
 					pstmt.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			if (conn != null) {
+				try {
+					conn.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

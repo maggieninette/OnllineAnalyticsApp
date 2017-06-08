@@ -1,5 +1,6 @@
 package ucsd.shoppingApp;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,7 +21,7 @@ public class PrecomputedTopStateSales {
 					        
 															"WHERE logtable.state_name=top_state_sales.state_name" ;
 	
-	private final static String CREATE_VIEW_OLD_TOP_50 = 	"CREATE OR REPLACE VIEW old_top_50_states AS "+
+	/*private final static String CREATE_VIEW_OLD_TOP_50 = 	"CREATE OR REPLACE VIEW old_top_50_states AS "+
 															"SELECT state_name as state_name, totalsale as total "+
 															"FROM top_state_sales "+
 															"ORDER BY total DESC" +
@@ -39,19 +40,12 @@ public class PrecomputedTopStateSales {
 																"WHERE state_name NOT IN ( "+
 																						"SELECT state_name "+
 																						"FROM new_top_50_products "+
-																						"); ";
+																						"); "; */
 	
-	
-	private static final String DROP_AND_BUILD_PRECOMPUTED_TOPSTATESALES_FILTERED =
-			"DROP TABLE IF EXISTS top_state_sales_filtered; "+
-
-			"CREATE TABLE top_state_sales_filtered( "+
-			  "state_id INTEGER, "+
-			  "state_name TEXT, "+
-			  "category_name TEXT, "+
-			  "totalsale INTEGER "+
-			"); "+
 			
+	private static final String DELETE_AND_INSERT_INTO_PRECOMPUTED_TOP_STATE_SALES_FILTERED =		
+			
+			" DELETE FROM top_state_sales_filtered; "+
 			
 			" INSERT INTO top_state_sales_filtered( "+
 			"  SELECT allstates.id AS state_id, allstates.state_name AS state_name, "+
@@ -83,18 +77,22 @@ public class PrecomputedTopStateSales {
   			
   			")";
 	
+	
+	//Only add sales from the log table, the newly purchased products from the same category. 
+	
 	private final static String UPDATE_TOP_STATE_SALES_FILTERED = 	
 			"UPDATE top_state_sales_filtered "+ 
-			"SET totalsale = top_state_sales_filtered.totalsale+logtable.total "+
-			"FROM 	( "+
-					"SELECT state_name, SUM(total) as total "+
-					"FROM log "+
-					"GROUP BY state_name "+ 
-					") AS logtable "+
+			"SET totalsale = top_state_sales_filtered.totalsale+logtable.total "+ 
+			"FROM 	(  "+
+					"SELECT state_name,category_name, SUM(total) as total  "+
+					"FROM log "+ 
+					"GROUP BY (state_name,category_name) "+  
+					") AS logtable "+ 
 
-			"WHERE logtable.state_name=top_state_sales_filtered.state_name" ;
+			"WHERE logtable.state_name=top_state_sales_filtered.state_name "+
+            "AND logtable.category_name=top_state_sales_filtered.category_name";
 
-private final static String CREATE_VIEW_OLD_TOP_50_FILTERED = 	
+/*private final static String CREATE_VIEW_OLD_TOP_50_FILTERED = 	
 	"CREATE OR REPLACE VIEW old_top_50_states AS "+
 			"SELECT state_name as state_name, totalsale as total "+
 			"FROM top_state_sales_filtered "+
@@ -115,20 +113,32 @@ private final static String GET_STATES_OUT_OF_TOP_50_FILTERED =
 				"WHERE state_name NOT IN ( "+
 										"SELECT state_name "+
 										"FROM new_top_50_products "+
-										"); ";
+										"); ";*/
 
 	
 	
 	public static void buildPrecomputedTopStateSalesFiltered(String category_name){
 		
+		System.out.println("Entered the method: buildPrecomputedTopStateSalesFiltered");
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
+		
+		Connection con = null;
 
 		try{
-			pstmt = ConnectionManager.getConnection().prepareStatement(DROP_AND_BUILD_PRECOMPUTED_TOPSTATESALES_FILTERED);
+			con = ConnectionManager.getConnection();
+			con.setAutoCommit(false);
+			
+			pstmt = con.prepareStatement(DELETE_AND_INSERT_INTO_PRECOMPUTED_TOP_STATE_SALES_FILTERED);
 			pstmt.setString(1, category_name);
 			pstmt.setString(2, category_name);
-			int tuples = pstmt.executeUpdate();
+			pstmt.executeUpdate();
+			
+			System.out.println("executed update");
+			pstmt.close();
+			
+			con.commit();
+			con.setAutoCommit(true);
 
 		}catch (SQLException e){
 			e.printStackTrace();
@@ -142,6 +152,15 @@ private final static String GET_STATES_OUT_OF_TOP_50_FILTERED =
 				}
 				
 			}
+			
+			if (con != null) {
+				try {
+					con.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+			}
 		}
 		System.out.println("Returning from buildPrecomputedTopStateSalesFiltered");
 		return;
@@ -149,31 +168,28 @@ private final static String GET_STATES_OUT_OF_TOP_50_FILTERED =
 	}
 	
 	
-	public static List<String> updateTopStateSalesTable() {
+	public static void updateTopStateSalesTable() {
 		
 		List<String> noLongerTopK = new ArrayList<>();	
 		ResultSet rs = null;
 		PreparedStatement pstmt = null;
 		Statement stmt = null;
+		Connection con = null;
 		
 		try{
-			pstmt = ConnectionManager.getConnection().prepareStatement(UPDATE_TOP_STATE_SALES);
-			stmt = ConnectionManager.getConnection().createStatement();
+			con = ConnectionManager.getConnection();
+			con.setAutoCommit(false);
+			pstmt = con.prepareStatement(UPDATE_TOP_STATE_SALES);
+			stmt = con.createStatement();
 			
-			//Create the view for old top 50 states.
-			rs = stmt.executeQuery(CREATE_VIEW_OLD_TOP_50);	
+		/*	//Create the view for old top 50 states.
+			rs = stmt.executeQuery(CREATE_VIEW_OLD_TOP_50);	*/
 			
 			//Update the Precomputed TotalStateSales table.
 			pstmt.executeUpdate();		
-			
-			//Get the products that no longer belong in the top 50.
-			rs = stmt.executeQuery(GET_STATES_OUT_OF_TOP_50);
-			
-			//Put the products in a list. 
-			while (rs.next()) {
-				noLongerTopK.add(rs.getString("state_name"));
-			}
-					
+
+			con.commit();
+			con.setAutoCommit(true);		
 			
 		}
 		catch (SQLException e){
@@ -195,10 +211,17 @@ private final static String GET_STATES_OUT_OF_TOP_50_FILTERED =
 					e.printStackTrace();
 				}
 			}
+			if (con != null) {
+				try {
+					con.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 			
 		}
 	
-		return noLongerTopK;
+		return;
 		
 		
 	}
@@ -239,17 +262,9 @@ private final static String GET_STATES_OUT_OF_TOP_50_FILTERED =
 		}
 	
 		return;
-		
-		
+			
 	}
-	
-	
-	
 
 }
-
-
-
-
 
 

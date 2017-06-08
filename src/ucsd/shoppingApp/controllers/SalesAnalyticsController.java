@@ -114,7 +114,7 @@ public class SalesAnalyticsController extends HttpServlet {
 			 * 
 			 */
 			System.out.println("got the top 50 products");
-			totalSalesPerState = StateDAO.getStateMappingAllProducts(states); //OPTIMIZED
+			totalSalesPerState = StateDAO.getStateMappingTop50Products(states,products); //OPTIMIZED
 			System.out.println("got the state mappings");
 			
 		}
@@ -128,14 +128,17 @@ public class SalesAnalyticsController extends HttpServlet {
 			
 			System.out.println("About to build the precomputedtopproductsales table with filter");
 			PrecomputedTopProductSales.buildPrecomputedTopProductSalesFiltered(categoryFilter);
+			
+			
 			PrecomputedStateTopK.buildPrecomputedStateTopKFiltered(categoryFilter);
 			
 			totalSales = StateDAO.getTotalPurchasesPerCategory(states, categoryFilter);
+			
 			products = product.getTopKOrderedProducts(categoryFilter); //Only gets 50.
 			/** Get Map<product id, total sale> for every state and put it in the list.
 			 * 
 			 */
-			totalSalesPerState = StateDAO.getStateMappingAllProducts(states); //OPTIMIZED
+			totalSalesPerState = StateDAO.getStateMappingFilteredTop50Products(states,products); //OPTIMIZED
 		}
 		
 		
@@ -143,10 +146,7 @@ public class SalesAnalyticsController extends HttpServlet {
 		 * 
 		 */
 		totalSalesPerProduct = product.getTotalSales(products); //OPTIMIZED
-		
-		// Check if next columns button should be displayed.
-		/*if (product.filterProductbyCategory(categoryFilter, ((int) session.getAttribute("column_counter") + 1)).isEmpty())
-			session.setAttribute("hideNextColsBtn", true);*/
+
 		
 		request.setAttribute("row_values", states); //OK
 		request.setAttribute("col_values", products); //FIXED
@@ -159,34 +159,29 @@ public class SalesAnalyticsController extends HttpServlet {
 
 		HttpSession session = request.getSession();
 		String filter = (String) session.getAttribute("filter");
-		List<String> newTopKProducts = new ArrayList<>();
+		HashMap <String,Integer> newTopKProducts = new HashMap<>();
 		List<String> noLongerTopKProducts = new ArrayList<>();
 		List<String> noLongerTopKStates = new ArrayList<>();
 		HashMap <String,Integer> updatedCellValues = new HashMap<>();
 		
 		if (filter.equals("allproducts")) {
-			newTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable().get(1);
-			noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable().get(2);
 			
-			noLongerTopKStates = PrecomputedTopStateSales.updateTopStateSalesTable(); //-- not necessary to return anything?
+			noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable();
+
+			PrecomputedTopStateSales.updateTopStateSalesTable(); //-- not necessary to return anything?
 		
-			updatedCellValues = PrecomputedStateTopK.updatePrecomputedStateTopK();
+			updatedCellValues = PrecomputedStateTopK.updatePrecomputedStateTopK();  //Done.
 		}
 		else {
-			newTopKProducts = PrecomputedTopProductSales.updateTopProductSalesFilteredTable().get(1);
-			noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesFilteredTable().get(2);
+			noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesFilteredTable();
+
 			
 			PrecomputedTopStateSales.updateTopStateSalesFilteredTable();
 			
 			updatedCellValues = PrecomputedStateTopK.updatePrecomputedStateTopKFiltered();			
 			
 		}
-		
-		/**
-		 * TO-DO : Update Precomputed tables that use category filter.
-		 * 
-		 */
-
+		newTopKProducts = PrecomputedTopProductSales.getNewTop50Products();
 
 	}
 
@@ -203,19 +198,16 @@ public class SalesAnalyticsController extends HttpServlet {
         System.out.println("Server received AJAX request.");
 
         // Get products no longer in top 50.
-        List<String> noLongerTopKProductsSample = new ArrayList<>();
+        List<String> noLongerTopKProducts = new ArrayList<>();
 
         //noLongerTopKProductsSample.add("PROD_64");
         //noLongerTopKProductsSample.add("PROD_477");
         //newTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable().get(1);
-		noLongerTopKProductsSample = PrecomputedTopProductSales.updateTopProductSalesTable().get(1);
+        
+		noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable();
         System.out.println("updated top product sales table");
         
 
-        
-        for (int i = 0; i < noLongerTopKProductsSample.size(); i++) {
-        	//System.out.println(noLongerTopKProductsSample.get(i));
-        }
 
         // Get updated total sale prices.
         Map<String, Double> updatedTotalSalePrices = new HashMap<>();
@@ -225,7 +217,7 @@ public class SalesAnalyticsController extends HttpServlet {
 
         // Package list as JSON.
         Gson gson = new Gson();
-        String noLongerTopKProductsJson = gson.toJson(noLongerTopKProductsSample);
+        String noLongerTopKProductsJson = gson.toJson(noLongerTopKProducts);
         String updatedTotalSalePricesJson = gson.toJson(updatedTotalSalePrices);
 
         String jsonResponse = null;

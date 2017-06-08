@@ -620,7 +620,7 @@ public class ProductDAO {
 				pt = ConnectionManager.getConnection().prepareStatement("SELECT * "+
 																		"FROM top_product_sales_filtered "+
 																		"WHERE category_name=? "+
-																		"ORDER BY totalsale DESC" +
+																		"ORDER BY totalsale DESC " +
 																		"LIMIT 50 ");
 				pt.setString(1, filter);
 				rs = pt.executeQuery();
