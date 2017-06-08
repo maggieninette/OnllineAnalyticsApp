@@ -61,6 +61,10 @@
 	   		</c:if> --%>
 			<input type="submit" id="reset-btn" value="Reset" name="action" />
 		</form>
+        <div align="center" id="new-topk-products-outer">
+            <h3>The following products are now included in the top 50 products:</h3>
+            <div align="center" id="new-topk-products-inner"></div>
+        </div>
 		<table border="1">
 		<tr>
 			<td></td>
@@ -86,7 +90,6 @@
 		</tr>
 		<tr>
 			<%
-                System.out.println("productName: " + pageContext.getAttribute("productName"));
                 // Loop through rows.
 				Map <String, Integer> userSales;
 				int sale = 0;
@@ -104,7 +107,6 @@
 					    temp = colVals.get(j);
                         pageContext.setAttribute("productName", temp);
                         pageContext.setAttribute("cellId", user + temp);
-                        System.out.println((String) pageContext.getAttribute("cellId"));
 
 					    if (userSales.get(temp) != null) {
 						    sale = userSales.get(temp);

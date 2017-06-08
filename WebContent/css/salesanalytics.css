@@ -26,3 +26,11 @@ a#back-home-link {
     display: inline-block;
     margin: 10px 0px;
 }
+
+#new-topk-products-outer {
+    visibility: hidden;
+}
+
+#new-topk-products-inner {
+    margin-bottom: 30px;
+}
