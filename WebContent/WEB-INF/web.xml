@@ -28,6 +28,14 @@
     <servlet-name>ProductController</servlet-name>
     <url-pattern>/ProductController</url-pattern>
   </servlet-mapping>
+    <servlet>
+    <servlet-name>SalesAnalyticsController</servlet-name>
+    <servlet-class>ucsd.shoppingApp.controllers.SalesAnalyticsController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>SalesAnalyticsController</servlet-name>
+    <url-pattern>/SalesAnalyticsController</url-pattern>
+  </servlet-mapping>
   <servlet>
     <servlet-name>CategoryController</servlet-name>
     <servlet-class>ucsd.shoppingApp.controllers.CategoryController</servlet-class>

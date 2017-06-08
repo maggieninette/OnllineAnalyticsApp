@@ -510,7 +510,7 @@ public class ProductDAO {
 		PreparedStatement ps = null;
 
 		try {
-			ps = ConnectionManager.getConnection().prepareStatement(GET_ALL_PRODUCTS_FROM_CATEGORY_NO_OFFSET);
+			ps = con.prepareStatement(GET_ALL_PRODUCTS_FROM_CATEGORY_NO_OFFSET);
 			ps.setString(1, category);
 			rs = ps.executeQuery();
 			
@@ -557,9 +557,9 @@ public class ProductDAO {
 		ArrayList<String> productsByCategory = new ArrayList<>();
 
 		try {
-			stmt = ConnectionManager.getConnection().createStatement();
+			stmt = con.createStatement();
 			
-			pt = ConnectionManager.getConnection().prepareStatement("SELECT * FROM top_product_sales WHERE product_name=? ");
+			pt = con.prepareStatement("SELECT * FROM top_product_sales WHERE product_name=? ");
 			
 			for (int i =0; i < products.size(); i++) {
 				String product_name = products.get(i);
@@ -607,7 +607,7 @@ public class ProductDAO {
 	PreparedStatement pt = null;
 	
 		try{
-			st = ConnectionManager.getConnection().createStatement();
+			st = con.createStatement();
 			
 			
 			if (filter==null) {
@@ -617,7 +617,7 @@ public class ProductDAO {
 				}
 			}
 			else { //A category filter was chosen.
-				pt = ConnectionManager.getConnection().prepareStatement("SELECT * "+
+				pt = con.prepareStatement("SELECT * "+
 																		"FROM top_product_sales_filtered "+
 																		"WHERE category_name=? "+
 																		"ORDER BY totalsale DESC " +
@@ -665,7 +665,7 @@ public class ProductDAO {
 		ResultSet rs = null;
 		Statement stmt = null;
 		try{
-			stmt = ConnectionManager.getConnection().createStatement();
+			stmt = con.createStatement();
 			rs = stmt.executeQuery(SELECT_ALL_PRODUCT_SQL);
 			
 			while (rs.next()) {

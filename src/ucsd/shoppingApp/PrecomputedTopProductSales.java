@@ -257,9 +257,11 @@ public class PrecomputedTopProductSales {
 		Statement stmt = null;
 		ResultSet rs = null;
 		
+		Connection con = null;
+		
 		try{
-			
-			stmt = ConnectionManager.getConnection().createStatement();
+			con = ConnectionManager.getConnection();
+			stmt = con.createStatement();
 			rs = stmt.executeQuery(	"SELECT * "+
 									"FROM new_top_50_products "+
 									"WHERE product_id "+
@@ -278,6 +280,13 @@ public class PrecomputedTopProductSales {
 			if (rs != null) {
 				try {
 					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if (con != null) {
+				try {
+					con.close();
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}

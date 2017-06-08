@@ -170,12 +170,13 @@ public class StateDAO {
 		
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
+		Connection con = null;
 		
 		try{
-			
+			con = ConnectionManager.getConnection();
 			
 			for (int i  = 0; i <states.size(); i++) {
-				pstmt = ConnectionManager.getConnection().prepareStatement(	"SELECT total "+
+				pstmt = con.prepareStatement(	"SELECT total "+
 					 	"FROM precomputed_state_topk_filtered "+
 					 	"WHERE state_name=? "+
 					 	"AND product_name=? ");
@@ -210,6 +211,9 @@ public class StateDAO {
 				}
 				if (pstmt != null) {
 					pstmt.close();
+				}
+				if (con != null) {
+					con.close();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -282,12 +286,13 @@ public class StateDAO {
 		
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
+		Connection con = null;
 		
 		try{
-			
+			con = ConnectionManager.getConnection();
 			
 			for (int i  = 0; i <states.size(); i++) {
-				pstmt = ConnectionManager.getConnection().prepareStatement(	"SELECT total "+
+				pstmt = con.prepareStatement(	"SELECT total "+
 					 	"FROM precomputed_state_topk "+
 					 	"WHERE state_name=? "+
 					 	"AND product_name=? ");
@@ -323,6 +328,9 @@ public class StateDAO {
 				if (pstmt != null) {
 					pstmt.close();
 				}
+				if (con != null) {
+					con.close();
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}			
@@ -349,9 +357,11 @@ public class StateDAO {
 		//Go to the TopStateSales table and for each state get the total purchases. 
 		PreparedStatement ptst = null;
 		ResultSet rs = null;
+		Connection con = null;
 		
 		try {	
-			ptst = ConnectionManager.getConnection().prepareStatement("SELECT * FROM top_state_sales");
+			con = ConnectionManager.getConnection();
+			ptst = con.prepareStatement("SELECT * FROM top_state_sales");
 		
 			rs = ptst.executeQuery();
 			
@@ -371,6 +381,9 @@ public class StateDAO {
 				}
 				if (ptst != null) {
 					ptst.close();
+				}
+				if (con != null) {
+					con.close();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -393,9 +406,11 @@ public class StateDAO {
 		//Go to the TopStateSales table and for each state get the total purchases. 
 		PreparedStatement ptst = null;
 		ResultSet rs = null;
-		
+		Connection con = null;
 		try {	
-			ptst = ConnectionManager.getConnection().prepareStatement("SELECT * FROM top_state_sales_filtered");
+			
+			con = ConnectionManager.getConnection();
+			ptst = con.prepareStatement("SELECT * FROM top_state_sales_filtered");
 		
 			rs = ptst.executeQuery();
 			
@@ -415,6 +430,9 @@ public class StateDAO {
 				}
 				if (ptst != null) {
 					ptst.close();
+				}
+				if (con != null) {
+					con.close();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
