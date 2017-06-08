@@ -19,6 +19,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import ucsd.shoppingApp.ConnectionManager;
 import ucsd.shoppingApp.PrecomputedStateTopK;
 import ucsd.shoppingApp.PrecomputedTopProductSales;
@@ -26,7 +29,7 @@ import ucsd.shoppingApp.PrecomputedTopStateSales;
 import ucsd.shoppingApp.ProductDAO;
 import ucsd.shoppingApp.StateDAO;
 
-/*@WebServlet("/SalesAnalyticsController")*/
+@WebServlet("/SalesAnalyticsController")
 public class SalesAnalyticsController extends HttpServlet {
 
 	private Connection con = null;
@@ -195,38 +198,43 @@ public class SalesAnalyticsController extends HttpServlet {
      */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        System.out.println("Server received AJAX request.");
-
         // Get products no longer in top 50.
-        List<String> noLongerTopKProducts = new ArrayList<>();
+//        List<String> newTopKProductsSample = PrecomputedTopProductSales.updateTopProductSalesTable().get(0);
+//        List<String> noLongerTopKProductsSample = PrecomputedTopProductSales.updateTopProductSalesTable().get(1);
 
-        //noLongerTopKProductsSample.add("PROD_64");
-        //noLongerTopKProductsSample.add("PROD_477");
-        //newTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable().get(1);
-        
-		noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable();
-        System.out.println("updated top product sales table");
-        
+        // Sample data.
+        List<String> noLongerTopKProductsSample = new ArrayList<>();
+        noLongerTopKProductsSample.add("PROD_4527");
+        noLongerTopKProductsSample.add("PROD_6249");
 
+        List<String> newTopKProductsSample = new ArrayList<>();
+        newTopKProductsSample.add("PROD_9507");
+        newTopKProductsSample.add("PROD_9517");
 
-        // Get updated total sale prices.
-        Map<String, Double> updatedTotalSalePrices = new HashMap<>();
-        updatedTotalSalePrices.put("IndianaPROD_4527", 13123987213.12);
-        updatedTotalSalePrices.put("VermontPROD_4527", 98722313.12);
-        updatedTotalSalePrices.put("KansasPROD_1351", 13123987213.12);
+        Map<String, Double> updatedSalesPricesSample = new HashMap<>();
+        updatedSalesPricesSample.put("IndianaPROD_646", 12345.67);
+        updatedSalesPricesSample.put("NebraskaPROD_3229", 98765.43);
 
-        // Package list as JSON.
+        // Convert lists & map to JSON string.
         Gson gson = new Gson();
-        String noLongerTopKProductsJson = gson.toJson(noLongerTopKProducts);
-        String updatedTotalSalePricesJson = gson.toJson(updatedTotalSalePrices);
+        String test1 = gson.toJson(noLongerTopKProductsSample);
+        String test2 = gson.toJson(newTopKProductsSample);
+        String test3 = gson.toJson(updatedSalesPricesSample);
 
-        String jsonResponse = null;
+        // Create JSON object and fill with contents.
+        JsonArray jsonResponse = new JsonArray();
+        jsonResponse.add(test1);
+        jsonResponse.add(test2);
+        jsonResponse.add(test3);
+
+        // Get filled JSON object as string.
+        String jsonArrayAsString = gson.toJson(jsonResponse);
+        System.out.println("jsonArrayAsString: " + jsonArrayAsString);
 
         // Send response as JSON.
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
-
-        out.print(noLongerTopKProductsJson);
+        out.write(jsonArrayAsString);
         out.close();
 	}
 
