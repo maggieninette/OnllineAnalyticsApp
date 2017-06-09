@@ -1,9 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.sql.Connection, ucsd.shoppingApp.ConnectionManager, ucsd.shoppingApp.*"%>
-<%@ page import="ucsd.shoppingApp.models.* , java.util.*" %>    
+<%@ page import="ucsd.shoppingApp.models.* , java.util.*, java.text.DecimalFormat" %>    
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%
+DecimalFormat decimalFormat = new DecimalFormat("#,##0.00");
+
+
 	List<String> rowVals = new ArrayList<>();
 	List<String> colVals = new ArrayList<>();
 	HashMap<String, Map<String, Double>> cellVals = new HashMap<>();
@@ -70,7 +73,7 @@
 				for (int i = 0; i < colVals.size(); i++) {
 					String productName = colVals.get(i);
 					pageContext.setAttribute("productName", productName);
-					double totalSalePerProduct = totalSalesPerProduct.get(productName);
+					String totalSalePerProduct = decimalFormat.format(totalSalesPerProduct.get(productName));
 			%>
 			<td class="${productName}">
                 <b><%= productName + " (" + totalSalePerProduct + ")" %></b>
@@ -89,8 +92,11 @@
 				    String user;
 				    user = rowVals.get(i);
 				    userSales = cellVals.get(user);
+				    
+				    
+				    String total = decimalFormat.format(totalSales.get(user));
 			%>
-			<td><b><%= user + " (" + totalSales.get(user) + ")" %></b></td>
+			<td><b><%= user + " (" + total + ")" %></b></td>
             <%
 				    // Loop through columns.
                     for (int j = 0; j < colVals.size(); j++) {
@@ -102,8 +108,9 @@
 					    if (userSales.get(temp) != null) {
 						    sale = userSales.get(temp);
 					    }
+					    String sale2 = decimalFormat.format(sale);
             %>
-			<td id=${cellId} class="${productName}"><%= sale %></td>
+			<td id=${cellId} class="${productName}"><%= sale2 %></td>
             <%
 				    }
             %>
