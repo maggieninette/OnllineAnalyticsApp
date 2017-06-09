@@ -9,28 +9,23 @@ function refreshTable() {
 
             $('#new-topk-products-outer').css('visibility', 'visible');
 
+            if (jQuery.hasData(response[1])) {
+                $('#new-topk-products-outer').html('<h3>The following products are now included in the top 50 products:</h3>')
+            }
+
             var noLongerTopKProducts = $.parseJSON(response[0]);
             var newTopKProducts = $.parseJSON(response[1]);
             var updatedTotalSales = $.parseJSON(response[2]);
-
-            console.log(response[2]);
-            console.log(updatedTotalSales);
 
             $.each(noLongerTopKProducts, function(index, element) {
                 $('.' + element).css('border', '3px solid #800080');
             });
 
             $.each(newTopKProducts, function(key, value) {
-                if (jQuery.hasData(response[1])) {
-                    $('#new-topk-products-outer').html('<h3>The following products are now included in the top 50 products:</h3>')
-                }
-
                 $('#new-topk-products-inner').append(key + ' (' + value + ') ');
             });
 
             $.each(updatedTotalSales, function(key, value) {
-                console.log('key: ' + key);
-                console.log('value: ' + value);
                 $('#' + key).html(value);
                 $('#' + key).css('color', 'red');
             });

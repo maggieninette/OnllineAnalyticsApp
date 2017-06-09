@@ -15,6 +15,8 @@ CREATE INDEX role_name_index ON role (role_name);
 
 
 /*Indices for precomputed tables: */
+CREATE INDEX state_name_log_index ON log (state_name);
+CREATE INDEX product_name_log_index ON log (product_name);
 CREATE INDEX precomputed_state_name_index on top_state_sales (state_name);
 CREATE INDEX precomputed_state_name_filtered_index on top_state_sales_filtered (state_name);
 CREATE INDEX precomputed_product_name_index on top_product_sales (product_name);
