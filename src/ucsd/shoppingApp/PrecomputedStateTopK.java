@@ -171,10 +171,11 @@ public class PrecomputedStateTopK {
 				    double newTotal = rc.getDouble(1);
 				    //Here we only want to put the cell values that are currently displayed in the table.
 
+                    state_name = state_name.replaceAll("\\.", "");
+                    state_name = state_name.replaceAll("\\s", "");
+
 				    System.out.println(state_name+product_name);
 				    pstmt.close();
-				    
-    	
 				    	
 				    updatedCells.put(state_name+product_name,newTotal);	    
 				    

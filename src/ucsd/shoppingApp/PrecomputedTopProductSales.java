@@ -161,9 +161,9 @@ public class PrecomputedTopProductSales {
 			pstmt.executeUpdate();
 			pstmt.close();
 			
-			pstmt = con.prepareStatement(CLEAR_LOG);			
-			pstmt.executeUpdate();
-			pstmt.close();
+//			pstmt = con.prepareStatement(CLEAR_LOG);
+//			pstmt.executeUpdate();
+//			pstmt.close();
 			
 			pstmt = con.prepareStatement(INSERT_INTO_NEW_TOP_50);			
 			pstmt.executeUpdate();
@@ -245,7 +245,48 @@ public class PrecomputedTopProductSales {
 
 		return noLongerTopK;
 	}
-	
+
+    public static void clearLog() {
+        Statement stmt = null;
+        ResultSet rs = null;
+        Connection con = null;
+
+        try{
+            con = ConnectionManager.getConnection();
+            con.setAutoCommit(false);
+            stmt = con.createStatement();
+            stmt.executeUpdate(CLEAR_LOG);
+            System.out.println("test");
+            con.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (con != null) {
+                try {
+                    con.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
+
+
 	/**
 	 * 
 	 * @return The map of new products that made it into the top 50 and their total sales. 

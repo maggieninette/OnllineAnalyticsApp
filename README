@@ -1,0 +1,8 @@
+Members:
+Samuel Adams
+Magdalena Ninette
+
+For schema/index/trigger info for the precomputed tables see:
+  -phase3/sqlScripts/createPrecomputedTables.sql
+  -phase3/sqlScripts/indices.sql
+  -phase3/sqlScripts/trigger.sql

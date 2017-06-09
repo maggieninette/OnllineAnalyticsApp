@@ -103,9 +103,11 @@ DecimalFormat decimalFormat = new DecimalFormat("#,##0.00");
 					    String temp;
 					    temp = colVals.get(j);
                         pageContext.setAttribute("productName", temp);
+                        user = user.replaceAll("\\.", "");
+                        user = user.replaceAll("\\s", "");
                         pageContext.setAttribute("cellId", user + temp);
-                        System.out.println("cellId: " + pageContext.getAttribute("cellId"));
 
+                        System.out.println(pageContext.getAttribute("cellId"));
 					    if (userSales.get(temp) != null) {
 						    sale = userSales.get(temp);
 					    }

@@ -13,6 +13,9 @@ function refreshTable() {
             var newTopKProducts = $.parseJSON(response[1]);
             var updatedTotalSales = $.parseJSON(response[2]);
 
+            console.log(response[2]);
+            console.log(updatedTotalSales);
+
             $.each(noLongerTopKProducts, function(index, element) {
                 $('.' + element).css('border', '3px solid #800080');
             });
@@ -26,6 +29,8 @@ function refreshTable() {
             });
 
             $.each(updatedTotalSales, function(key, value) {
+                console.log('key: ' + key);
+                console.log('value: ' + value);
                 $('#' + key).html(value);
                 $('#' + key).css('color', 'red');
             });

@@ -153,11 +153,14 @@ public class SalesAnalyticsController extends HttpServlet {
         List<String> noLongerTopKProductsList = PrecomputedTopProductSales.updateTopProductSalesTable();
         Map<String, Double> newTopKProductsMap = PrecomputedTopProductSales.getNewTop50Products();
         Map<String, Double> updatedTotalSalesMap = PrecomputedStateTopK.updatePrecomputedStateTopK();
+        PrecomputedTopStateSales.updateTopStateSalesTable();
+        PrecomputedTopProductSales.clearLog();
 
         // Convert lists & map to JSON string.
         Gson gson = new Gson();
         String noLongerTopKProductsListAsString = gson.toJson(noLongerTopKProductsList);
         String newTopKProductsMapAsString = gson.toJson(newTopKProductsMap);
+
         String updatedTotalSalesMapAsString = gson.toJson(updatedTotalSalesMap);
 
         // Create JSON object and fill with contents.
@@ -168,6 +171,7 @@ public class SalesAnalyticsController extends HttpServlet {
 
         // Get filled JSON object as string.
         String jsonResponseAsString = gson.toJson(jsonResponse);
+        System.out.println("jsonResponseAsString: " + jsonResponseAsString);
 
         // Send response as JSON.
         response.setContentType("application/json");
