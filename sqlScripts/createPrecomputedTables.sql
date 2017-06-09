@@ -77,6 +77,15 @@ INSERT INTO old_top_50_products(
      ORDER BY totalsale DESC
      LIMIT 50
      );
+     
+     
+INSERT INTO new_top_50_products(
+     SELECT product_id,product_name, totalsale
+     FROM top_product_sales
+     ORDER BY totalsale DESC
+     LIMIT 50
+    
+    );
 
 
 CREATE TABLE top_state_sales(

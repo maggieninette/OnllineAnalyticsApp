@@ -110,7 +110,7 @@ public class StateDAO {
 	}
 
 	public static HashMap<String, Map <String, Double>> getStateMappingTop50Products(List<String> states, List<String> products) {
-		
+
 		HashMap <String, Map <String, Double>> totalSalesPerStateForEachProduct = new HashMap<>();
 		
 		PreparedStatement pstmt = null;
@@ -132,11 +132,12 @@ public class StateDAO {
 				
 				String state_name = states.get(i);
 				HashMap<String, Double> grandTotal = new HashMap<>();
-
+				System.out.println("before pstmt executes");
 				pstmt.setString(1, state_name);
 				rs = pstmt.executeQuery();
 				
 				while (rs.next()){
+
 					grandTotal.put(rs.getString("product_name"), rs.getDouble("total"));
 				}
 				
