@@ -68,12 +68,6 @@
 		<table border="1">
 		<tr>
 			<td></td>
-            <%--<c:forEach var="productName" items="${colVals}">
-                <td class="${productName}">
-                    blah
-                    <b>${productName} ( <%= totalSalesPerProduct.get((String) pageContext.getAttribute("productName")) %> )</b>
-                </td>
-            </c:forEach>--%>
             <%
 				// Setting up column headers.
 				for (int i = 0; i < colVals.size(); i++) {
