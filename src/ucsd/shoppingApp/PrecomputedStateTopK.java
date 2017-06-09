@@ -135,8 +135,8 @@ public class PrecomputedStateTopK {
 			
 			pstmt = conn.prepareStatement(UPDATE_CELL_VALUES);
 			
-			pstmt.executeQuery();
-			
+			pstmt.executeUpdate();
+			stmt = conn.createStatement();
 			/*rs = stmt.executeQuery("SELECT * FROM state");
 			
 			
@@ -147,22 +147,24 @@ public class PrecomputedStateTopK {
 			newCellValues = StateDAO.getStateMappingAllProducts(states);*/
 			
 			pstmt = conn.prepareStatement(GET_SALE);
-			rs = stmt.executeQuery("SELECT * FROM log");
 			
-			while (rs.next()) {
-				String state_name = rs.getString("state_name");
-			    String product_name = rs.getString("product_name");
-			    
-			    pstmt.setString(1, state_name);
-			    pstmt.setString(2,product_name);
-			    
-			    rc = pstmt.executeQuery();
-			    int newTotal = rc.getInt(1);
-			    
+			rs = stmt.executeQuery("SELECT * FROM log ");
+			
 
-			    updatedCells.put(state_name+product_name,newTotal);	    
-				
-			}
+				while (rs.next()) {
+					String state_name = rs.getString("state_name");
+				    String product_name = rs.getString("product_name");
+				    
+				    pstmt.setString(1, state_name);
+				    pstmt.setString(2,product_name);
+				    
+				    rc = pstmt.executeQuery();
+				    int newTotal = rc.getInt(1);
+				    
+	
+				    updatedCells.put(state_name+product_name,newTotal);	    
+					
+				}
 			
 			conn.commit();
 			conn.setAutoCommit(true);
