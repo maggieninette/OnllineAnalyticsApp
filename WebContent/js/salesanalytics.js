@@ -13,22 +13,16 @@ function refreshTable() {
             var newTopKProducts = $.parseJSON(response[1]);
             var updatedTotalSales = $.parseJSON(response[2]);
 
-            if (newTopKProducts.length == 0) {
-                $('#new-topk-products-outer').html('<h3>No new products are included in the top 50.</h3>');
-            }
-
             $.each(noLongerTopKProducts, function(index, element) {
                 $('.' + element).css('border', '3px solid #800080');
             });
 
-            $.each(newTopKProducts, function(index, element) {
-                var $this = $(this);
-
-                if (index != newTopKProducts.length - 1) {
-                    $('#new-topk-products-inner').append(element + ', ');
+            $.each(newTopKProducts, function(key, value) {
+                if (jQuery.hasData(response[1])) {
+                    $('#new-topk-products-outer').html('<h3>The following products are now included in the top 50 products:</h3>')
                 }
-                else
-                    $('#new-topk-products-inner').append(element);
+
+                $('#new-topk-products-inner').append(key + ' (' + value + ') ');
             });
 
             $.each(updatedTotalSales, function(key, value) {
