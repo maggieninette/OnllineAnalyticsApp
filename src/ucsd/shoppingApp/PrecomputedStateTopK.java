@@ -230,12 +230,14 @@ public class PrecomputedStateTopK {
 	 * @return returns the js ids mapped to the new values.
 	 */
 	
+	
 	public static HashMap<String, Double> updatePrecomputedStateTopKFiltered(){
 		ResultSet rs = null;
 		ResultSet rc = null;
 		PreparedStatement pstmt = null;
 		Statement stmt = null;
-
+		//HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
+		//ArrayList<String> states = new ArrayList<>();
 		
 		HashMap<String,Double> updatedCells = new HashMap<>();
 		Connection conn = null;
@@ -279,10 +281,11 @@ public class PrecomputedStateTopK {
 				    double newTotal = rc.getDouble(1);
 				    //Here we only want to put the cell values that are currently displayed in the table.
 
+                    state_name = state_name.replaceAll("\\.", "");
+                    state_name = state_name.replaceAll("\\s", "");
+
 				    System.out.println(state_name+product_name);
 				    pstmt.close();
-				    
-    	
 				    	
 				    updatedCells.put(state_name+product_name,newTotal);	    
 				    

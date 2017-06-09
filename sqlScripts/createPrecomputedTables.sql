@@ -46,6 +46,19 @@ CREATE TABLE new_top_50_products (
   totalsale BIGINT
     );
 
+CREATE TABLE new_top_50_products_filtered (
+  product_id INTEGER,
+  product_name TEXT,
+  totalsale BIGINT
+    );
+
+
+CREATE TABLE old_top_50_products_filtered (
+  product_id INTEGER,
+  product_name TEXT,
+  totalsale BIGINT
+    );
+
 
 
 CREATE TABLE top_product_sales(
@@ -77,7 +90,12 @@ INSERT INTO old_top_50_products(
      ORDER BY totalsale DESC
      LIMIT 50
      );
-     
+INSERT INTO old_top_50_products_filtered(
+     SELECT product_id,product_name, totalsale
+     FROM top_product_sales_filtered
+     ORDER BY totalsale DESC
+     LIMIT 50
+     );     
      
 INSERT INTO new_top_50_products(
      SELECT product_id,product_name, totalsale
@@ -87,6 +105,13 @@ INSERT INTO new_top_50_products(
     
     );
 
+INSERT INTO new_top_50_products_filtered(
+     SELECT product_id,product_name, totalsale
+     FROM top_product_sales_filtered
+     ORDER BY totalsale DESC
+     LIMIT 50
+    
+    );
 
 CREATE TABLE top_state_sales(
   state_id INTEGER,

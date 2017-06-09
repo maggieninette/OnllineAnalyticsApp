@@ -109,7 +109,8 @@ public class SalesAnalyticsController extends HttpServlet {
 		else {
 
 			// A filter was applied so we need to build the precomputed tables for that category
-			System.out.println("About to build the precomputedtopstatesales table with filter");
+
+			states = StateDAO.buildStatesTopKList(categoryFilter);
 			PrecomputedTopStateSales.buildPrecomputedTopStateSalesFiltered(categoryFilter);
 			
 			System.out.println("About to build the precomputedtopproductsales table with filter");
@@ -149,12 +150,36 @@ public class SalesAnalyticsController extends HttpServlet {
      */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // Get products no longer in top 50.
-        List<String> noLongerTopKProductsList = PrecomputedTopProductSales.updateTopProductSalesTable();
-        Map<String, Double> newTopKProductsMap = PrecomputedTopProductSales.getNewTop50Products();
-        Map<String, Double> updatedTotalSalesMap = PrecomputedStateTopK.updatePrecomputedStateTopK();
-        PrecomputedTopStateSales.updateTopStateSalesTable();
-        PrecomputedTopProductSales.clearLog();
+		HttpSession session = request.getSession();
+		String categoryFilter = (String) session.getAttribute("filter");
+		
+		
+		List<String> noLongerTopKProductsList = new ArrayList<>();
+		Map<String, Double> newTopKProductsMap = new HashMap<>();
+		Map<String, Double> updatedTotalSalesMap = new HashMap<>();
+		
+		
+		
+		if (categoryFilter.equals("all_products")) {
+	        // Get products no longer in top 50.
+	        noLongerTopKProductsList = PrecomputedTopProductSales.updateTopProductSalesTable();
+	        newTopKProductsMap = PrecomputedTopProductSales.getNewTop50Products();
+	        updatedTotalSalesMap = PrecomputedStateTopK.updatePrecomputedStateTopK();
+	        
+	        PrecomputedTopStateSales.updateTopStateSalesTable();
+	        PrecomputedTopProductSales.clearLog();
+
+		}
+		else {
+			noLongerTopKProductsList = PrecomputedTopProductSales.updateTopProductSalesFilteredTable();
+			newTopKProductsMap = PrecomputedTopProductSales.getNewTop50ProductsFiltered();
+			updatedTotalSalesMap = PrecomputedStateTopK.updatePrecomputedStateTopKFiltered();
+			
+			PrecomputedTopStateSales.updateTopStateSalesFilteredTable();
+			PrecomputedTopProductSales.clearLog();
+			
+		}
+        
 
         // Convert lists & map to JSON string.
         Gson gson = new Gson();

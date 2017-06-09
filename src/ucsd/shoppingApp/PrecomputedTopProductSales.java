@@ -89,6 +89,9 @@ public class PrecomputedTopProductSales {
 	      			"ON (t1.p_id,t1.product_name,t1.category_name) = (t2.pr_id,t2.pr_name,t2.c_name) "+
 	     			");";
 	
+	private final static String DELETE_OLD_TOP_50_FILTERED = "DELETE FROM old_top_50_products_filtered";
+	
+	private final static String DELETE_NEW_TOP_50_FILTERED = "DELETE FROM new_top_50_products_filtered";
 
 	private final static String UPDATE_TOP_50_PRODUCTS_FILTERED =
 
@@ -103,19 +106,25 @@ public class PrecomputedTopProductSales {
 		        "AND top_product_sales_filtered.product_id = logtable.product_id ";
 
 	private final static String INSERT_INTO_OLD_TOP_50_FILTERED = 		
-			"INSERT INTO old_top_50_products (product_id, product_name, totalsale) "+ 
+			"INSERT INTO old_top_50_products_filtered (product_id, product_name, totalsale) "+ 
 			"SELECT product_id AS product_id, product_name AS product_name, totalsale AS total "+ 
 		    "FROM top_product_sales_filtered "+ 
 		    "ORDER BY total DESC "+ 
 		    "LIMIT 50 ";
 	
 	private final static String INSERT_INTO_NEW_TOP_50_FILTERED =	
-		    "INSERT INTO new_top_50_products (product_id, product_name, totalsale) "+ 
+		    "INSERT INTO new_top_50_products_filtered (product_id, product_name, totalsale) "+ 
 		    "SELECT product_id AS product_id, product_name AS product_name, totalsale AS total  "+
 		    "FROM top_product_sales_filtered "+
 		    "ORDER BY total DESC "+ 
 		    "LIMIT 50 ";	
-	
+
+	private final static String GET_PRODUCTS_OUT_OF_TOP_50_FILTERED =	
+		    "SELECT * "+
+		    "FROM old_top_50_products_filtered "+
+		    "WHERE product_id NOT IN "+
+		        "( SELECT product_id "+ 
+		         "FROM new_top_50_products_filtered) ";
 
 	/*
 	 * This function updates the precomputed TopProductSales table and returns the list 
@@ -344,6 +353,63 @@ public class PrecomputedTopProductSales {
 		return newTop50;
 	}
 	
+	/**
+	 * 
+	 * @return The map of new products that made it into the top 50 and their total sales. 
+	 */
+	
+	public static HashMap <String, Double> getNewTop50ProductsFiltered(){
+		HashMap <String, Double> newTop50 = new HashMap<>();
+		
+		Statement stmt = null;
+		ResultSet rs = null;
+		
+		Connection con = null;
+		
+		try{
+			con = ConnectionManager.getConnection();
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(	"SELECT * "+
+									"FROM new_top_50_products_filtered "+
+									"WHERE product_id "+
+									"NOT IN ("+
+									"		SELECT product_id "+
+									"		FROM old_top_50_products_filtered )" );
+			
+			while (rs.next()) {
+				newTop50.put(rs.getString("product_name"), rs.getDouble("totalsale"));
+			}
+			
+			
+		}catch (SQLException e) {
+			
+		}finally{
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if (con != null) {
+				try {
+					con.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			if (stmt != null) {
+				try {
+					stmt.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			
+			}
+		}
+		return newTop50;
+	}
+	
 	
 	public static List<String> updateTopProductSalesFilteredTable() {
 
@@ -365,12 +431,12 @@ public class PrecomputedTopProductSales {
 			
 			stmt = con.createStatement();
 			
-			pstmt = con.prepareStatement(DELETE_OLD_TOP_50);			
+			pstmt = con.prepareStatement(DELETE_OLD_TOP_50_FILTERED);			
 			pstmt.executeUpdate();
 			pstmt.close();
 			
 			
-			pstmt = con.prepareStatement(DELETE_NEW_TOP_50);			
+			pstmt = con.prepareStatement(DELETE_NEW_TOP_50_FILTERED);			
 			pstmt.executeUpdate();
 			pstmt.close();
 			
@@ -383,16 +449,12 @@ public class PrecomputedTopProductSales {
 			pstmt.executeUpdate();
 			pstmt.close();
 			
-			pstmt = con.prepareStatement(CLEAR_LOG);			
-			pstmt.executeUpdate();
-			pstmt.close();
-			
 			pstmt = con.prepareStatement(INSERT_INTO_NEW_TOP_50_FILTERED);			
 			pstmt.executeUpdate();
 			pstmt.close();
 			
 			//Get the products that no longer belong in the top 50.
-			rs = stmt.executeQuery(GET_PRODUCTS_OUT_OF_TOP_50);
+			rs = stmt.executeQuery(GET_PRODUCTS_OUT_OF_TOP_50_FILTERED);
 
 
 			//Put the products in a list. 
@@ -486,6 +548,20 @@ public class PrecomputedTopProductSales {
 			pstmt.setString(1, category_name);
 			pstmt.setString(2, category_name);
 			pstmt.executeUpdate();
+			
+			
+			
+			//Delete and insert into old and new top 50
+			pstmt = con.prepareStatement(DELETE_OLD_TOP_50_FILTERED);
+			pstmt.executeUpdate();
+			pstmt = con.prepareStatement(INSERT_INTO_OLD_TOP_50_FILTERED);
+			pstmt.executeUpdate();
+			pstmt = con.prepareStatement(DELETE_NEW_TOP_50_FILTERED);
+			pstmt.executeUpdate();
+			pstmt = con.prepareStatement(INSERT_INTO_NEW_TOP_50_FILTERED);
+			pstmt.executeUpdate();
+			
+			
 			
 			con.commit();
 			con.setAutoCommit(true);

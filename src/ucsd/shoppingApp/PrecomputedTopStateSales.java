@@ -226,17 +226,28 @@ private final static String GET_STATES_OUT_OF_TOP_50_FILTERED =
 		
 	}
 	
+	
 	public static void updateTopStateSalesFilteredTable() {
 		
 		List<String> noLongerTopK = new ArrayList<>();	
 		ResultSet rs = null;
 		PreparedStatement pstmt = null;
 		Statement stmt = null;
+		Connection con = null;
 		
 		try{
-			stmt = ConnectionManager.getConnection().createStatement();
-			rs = stmt.executeQuery(UPDATE_TOP_STATE_SALES_FILTERED);
-		
+			con = ConnectionManager.getConnection();
+			con.setAutoCommit(false);
+			pstmt = con.prepareStatement(UPDATE_TOP_STATE_SALES_FILTERED);
+			stmt = con.createStatement();
+			
+
+			
+			//Update the Precomputed TotalStateSalesFiltered table.
+			pstmt.executeUpdate();		
+
+			con.commit();
+			con.setAutoCommit(true);		
 			
 		}
 		catch (SQLException e){
@@ -258,11 +269,19 @@ private final static String GET_STATES_OUT_OF_TOP_50_FILTERED =
 					e.printStackTrace();
 				}
 			}
+			if (con != null) {
+				try {
+					con.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 			
 		}
 	
 		return;
-			
+		
+		
 	}
 
 }
