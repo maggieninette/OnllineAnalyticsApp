@@ -48,8 +48,6 @@ CREATE TABLE new_top_50_products (
 
 
 
-
-
 CREATE TABLE top_product_sales(
   product_id INTEGER,
   product_name TEXT,
@@ -73,7 +71,7 @@ INSERT INTO top_product_sales(
       ON p.id = product_id
 );
 
-INSERT INTO new_top_50_products(
+INSERT INTO old_top_50_products(
      SELECT product_id,product_name, totalsale
      FROM top_product_sales
      ORDER BY totalsale DESC
