@@ -176,29 +176,28 @@ public class StateDAO {
 			con = ConnectionManager.getConnection();
 			
 			for (int i  = 0; i <states.size(); i++) {
-				pstmt = con.prepareStatement(	"SELECT total "+
-					 	"FROM precomputed_state_topk_filtered "+
-					 	"WHERE state_name=? "+
-					 	"AND product_name=? ");
+				pstmt = con.prepareStatement(	
+												"SELECT product_name, total "+
+												"FROM precomputed_state_topk_filtered "+
+												"WHERE state_name=? "+
+												"AND product_name IN "+
+																"(SELECT product_name "+
+												                 "FROM new_top_50_products "+
+												                 "); ");
 				
 				String state_name = states.get(i);
 				HashMap<String, Integer> grandTotal = new HashMap<>();
-				System.out.println(Integer.toString(states.size()));
+
+				pstmt.setString(1, state_name);
+				rs = pstmt.executeQuery();
 				
-				for (int j = 0; j < products.size(); j++ ) {
-					String product_name = products.get(j);
-					
-					pstmt.setString(1, state_name);
-					pstmt.setString(2, product_name);
-					
-					rs = pstmt.executeQuery();
-					
-					rs.next();
-					grandTotal.put(products.get(j), rs.getInt("total"));
-					
+				while (rs.next()){
+					grandTotal.put(rs.getString("product_name"),rs.getInt("total"));
 				}
+				
 				pstmt.close();
-				totalSalesPerStateForEachProduct.put(states.get(i),grandTotal);
+		
+				totalSalesPerStateForEachProduct.put(state_name,grandTotal);
 			}
 
 			
@@ -222,6 +221,7 @@ public class StateDAO {
 		
 		
 		return totalSalesPerStateForEachProduct;
+		
 		
 	}
 	
@@ -292,30 +292,33 @@ public class StateDAO {
 			con = ConnectionManager.getConnection();
 			
 			for (int i  = 0; i <states.size(); i++) {
-				pstmt = con.prepareStatement(	"SELECT total "+
-					 	"FROM precomputed_state_topk "+
-					 	"WHERE state_name=? "+
-					 	"AND product_name=? ");
+				pstmt = con.prepareStatement(	
+												"SELECT product_name, total "+
+												"FROM precomputed_state_topk "+
+												"WHERE state_name=? "+
+												"AND product_name IN "+
+																"(SELECT product_name "+
+												                 "FROM new_top_50_products "+
+												                 "); ");
 				
 				String state_name = states.get(i);
 				HashMap<String, Integer> grandTotal = new HashMap<>();
-				System.out.println(Integer.toString(states.size()));
+
+				pstmt.setString(1, state_name);
+				rs = pstmt.executeQuery();
 				
-				for (int j = 0; j < products.size(); j++ ) {
-					String product_name = products.get(j);
-					
-					pstmt.setString(1, state_name);
-					pstmt.setString(2, product_name);
-					
-					rs = pstmt.executeQuery();
-					
-					rs.next();
-					grandTotal.put(products.get(j), rs.getInt("total"));
-					
+				while (rs.next()){
+					grandTotal.put(rs.getString("product_name"),rs.getInt("total"));
 				}
+				
 				pstmt.close();
-				totalSalesPerStateForEachProduct.put(states.get(i),grandTotal);
+		
+				totalSalesPerStateForEachProduct.put(state_name,grandTotal);
 			}
+			
+			
+			
+			
 
 			
 		}catch (SQLException e){
@@ -366,7 +369,7 @@ public class StateDAO {
 			rs = ptst.executeQuery();
 			
 			while (rs.next()) {
-				//totalSalesPerState.put(rs.getString("state_name"),rs.getInt("totalsale")); TEST
+				//totalSalesPerState.put(rs.getString("state_name"),rs.getInt("totalsale")); 
 				totalSalesPerState.put(rs.getString("state_name"),1);
 			}
 			
