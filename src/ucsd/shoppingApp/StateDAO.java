@@ -315,12 +315,7 @@ public class StateDAO {
 		
 				totalSalesPerStateForEachProduct.put(state_name,grandTotal);
 			}
-			
-			
-			
-			
 
-			
 		}catch (SQLException e){
 			e.printStackTrace();
 		}finally{
@@ -369,8 +364,8 @@ public class StateDAO {
 			rs = ptst.executeQuery();
 			
 			while (rs.next()) {
-				//totalSalesPerState.put(rs.getString("state_name"),rs.getInt("totalsale")); 
-				totalSalesPerState.put(rs.getString("state_name"),1);
+				totalSalesPerState.put(rs.getString("state_name"),rs.getInt("totalsale")); 
+
 			}
 			
 		}
@@ -466,7 +461,7 @@ public class StateDAO {
 			
 			// Check if sales filter had been applied.
 			if (filter.equals("all_products")) {
-				rs = stmt.executeQuery("SELECT * FROM top_state_sales ");
+				rs = stmt.executeQuery("SELECT * FROM top_state_sales ORDER BY totalsale LIMIT 50 ");
 				
 				while (rs.next()) {
 					statesTopKSorted.add(rs.getString("state_name"));
@@ -476,25 +471,13 @@ public class StateDAO {
 			else {
 				rs = stmt.executeQuery(STATES_SQL);
 				while (rs.next()) {
-					allStates.add(rs.getString("state_name"));
+					rs = stmt.executeQuery("SELECT * FROM top_state_sales_filtered ORDER BY totalsale LIMIT 50 ");
+					
+					while (rs.next()) {
+						statesTopKSorted.add(rs.getString("state_name"));
+					}
 				}
-				totalSalesPerState = getTotalPurchasesPerCategory(allStates, filter);
-			
 
-				// Make pairs (state, total money spent) and sort the list.
-				ArrayList<Pair> statesTotalPairs = new ArrayList<>();
-			    for (Map.Entry<String, Integer> entry : totalSalesPerState.entrySet()) {
-			    	Pair stateTotalPair = new Pair(entry.getKey(),entry.getValue());
-			    	statesTotalPairs.add(stateTotalPair);
-			    }
-			    
-			    // Sort list of pairs.
-			    ArrayList<Pair> sortedStateTotalPairs = Pair.bubbleSort(statesTotalPairs);
-			    
-			    // now put it into the statesTopK list. Start from the end of the stateTotalPairs...
-			    for (int j = sortedStateTotalPairs.size() - 1; j >= 0; j--) {
-			    	statesTopKSorted.add(sortedStateTotalPairs.get(j).getKey());
-			    }
 			}
 		}
 		catch (SQLException e) {
