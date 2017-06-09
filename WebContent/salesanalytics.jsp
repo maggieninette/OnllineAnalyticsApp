@@ -6,9 +6,9 @@
 <%
 	List<String> rowVals = new ArrayList<>();
 	List<String> colVals = new ArrayList<>();
-	HashMap<String, Map<String, Integer>> cellVals = new HashMap<>();
-	Map<String, Integer> totalSales = new HashMap<>();
-	HashMap<String, Integer> totalSalesPerProduct = new HashMap<>();
+	HashMap<String, Map<String, Double>> cellVals = new HashMap<>();
+	Map<String, Double> totalSales = new HashMap<>();
+	HashMap<String, Double> totalSalesPerProduct = new HashMap<>();
 
 	if (request.getAttribute("row_values") != null || request.getAttribute("col_values") != null ||
 		request.getAttribute("cell_values") != null || request.getAttribute("totalSales") != null) {
@@ -16,9 +16,9 @@
 		// Get request attributes to build table.
 		rowVals = (List<String>) request.getAttribute("row_values");
 		colVals = (List<String>) request.getAttribute("col_values");
-		cellVals = (HashMap<String, Map <String,Integer>>) request.getAttribute("cell_values");
-		totalSales = (Map<String, Integer>) request.getAttribute("totalSales");
-		totalSalesPerProduct = (HashMap<String, Integer>) request.getAttribute("totalSalesPerProduct");
+		cellVals = (HashMap<String, Map <String,Double>>) request.getAttribute("cell_values");
+		totalSales = (Map<String, Double>) request.getAttribute("totalSales");
+		totalSalesPerProduct = (HashMap<String, Double>) request.getAttribute("totalSalesPerProduct");
 	}
 
 	Connection con = ConnectionManager.getConnection();
@@ -56,9 +56,6 @@
 	</c:when>
 	<c:otherwise>
 		<form action="SalesAnalyticsController" method="post">
-	 		<%--<c:if test="${sessionScope.hideNextColsBtn eq null}">
-				<input type="submit" value="Next 50 Columns" name="action" />
-	   		</c:if> --%>
 			<input type="submit" id="reset-btn" value="Reset" name="action" />
 		</form>
         <div align="center" id="new-topk-products-outer">
@@ -73,10 +70,10 @@
 				for (int i = 0; i < colVals.size(); i++) {
 					String productName = colVals.get(i);
 					pageContext.setAttribute("productName", productName);
-					int totalSalePerProduct = totalSalesPerProduct.get(productName);
+					double totalSalePerProduct = totalSalesPerProduct.get(productName);
 			%>
 			<td class="${productName}">
-                <b><%= productName + " (" + Integer.toString(totalSalePerProduct) + ")" %></b>
+                <b><%= productName + " (" + totalSalePerProduct + ")" %></b>
             </td>
 			<%
 				}
@@ -85,15 +82,15 @@
 		<tr>
 			<%
                 // Loop through rows.
-				Map <String, Integer> userSales;
-				int sale = 0;
+				Map <String, Double> userSales;
+				double sale = 0;
 	
 				for (int i = 0; i < rowVals.size(); i++) {
 				    String user;
 				    user = rowVals.get(i);
 				    userSales = cellVals.get(user);
 			%>
-			<td><b><%= user + " (" + Integer.toString(totalSales.get(user)) + ")" %></b></td>
+			<td><b><%= user + " (" + totalSales.get(user) + ")" %></b></td>
             <%
 				    // Loop through columns.
                     for (int j = 0; j < colVals.size(); j++) {

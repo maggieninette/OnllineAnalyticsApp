@@ -3,7 +3,6 @@ package ucsd.shoppingApp.controllers;
 import java.io.IOException;
 
 import java.io.PrintWriter;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -12,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -20,8 +18,6 @@ import javax.servlet.http.HttpSession;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import ucsd.shoppingApp.ConnectionManager;
 import ucsd.shoppingApp.PrecomputedStateTopK;
 import ucsd.shoppingApp.PrecomputedTopProductSales;
@@ -29,7 +25,6 @@ import ucsd.shoppingApp.PrecomputedTopStateSales;
 import ucsd.shoppingApp.ProductDAO;
 import ucsd.shoppingApp.StateDAO;
 
-//@WebServlet("/SalesAnalyticsController")
 public class SalesAnalyticsController extends HttpServlet {
 
 	private Connection con = null;
@@ -89,43 +84,31 @@ public class SalesAnalyticsController extends HttpServlet {
 
 		List<String> products = new ArrayList<String>();
 		List<String> states = new ArrayList<String>();
-		Map <String, Integer> totalSales = new HashMap <>();
-        HashMap<String, Map<String, Integer>> totalSalesPerState = new HashMap<>();
-        HashMap<String,Integer> totalSalesPerProduct = new HashMap<>();
-
-    
+		Map <String, Double> totalSales = new HashMap<>();
+        HashMap<String, Map<String, Double>> totalSalesPerState = new HashMap<>();
+        HashMap<String, Double> totalSalesPerProduct = new HashMap<>();
 
         states = StateDAO.getStatesTopKList(categoryFilter);
 		ProductDAO product = new ProductDAO(ConnectionManager.getConnection());
-
-
-				
-
-
 		
 		/** 1. Get mapping of state to total money they spent in purchases and   
 		 *  2. Get product names
 		 *  ...depending on whether or not a filter was used.
-		 *  
 		 */
 		if (categoryFilter.equals("all_products")) {
 	        
 			totalSales = StateDAO.getTotalPurchasesAllProducts(states);  //OPTIMIZED
 			
 			products = product.getTopKOrderedProducts(null); //Only gets 50.
-			/** Get Map<product id, total sale> for every state and put it in the list.
-			 * 
-			 */
+			// Get Map<product id, total sale> for every state and put it in the list.
 			System.out.println("got the top 50 products");
-			totalSalesPerState = StateDAO.getStateMappingTop50Products(states,products); //OPTIMIZED
+			totalSalesPerState = StateDAO.getStateMappingTop50Products(states, products); //OPTIMIZED
 			System.out.println("got the state mappings");
 			
 		}
 		else {
 
-			/**A filter was applied so we need to build the precomputed tables for that category
-			 * 
-			 */
+			// A filter was applied so we need to build the precomputed tables for that category
 			System.out.println("About to build the precomputedtopstatesales table with filter");
 			PrecomputedTopStateSales.buildPrecomputedTopStateSalesFiltered(categoryFilter);
 			
@@ -141,51 +124,19 @@ public class SalesAnalyticsController extends HttpServlet {
 			/** Get Map<product id, total sale> for every state and put it in the list.
 			 * 
 			 */
-			totalSalesPerState = StateDAO.getStateMappingFilteredTop50Products(states,products); //OPTIMIZED
+			totalSalesPerState = StateDAO.getStateMappingFilteredTop50Products(states, products); //OPTIMIZED
 		}
-		
 		
 		/**Get a mapping of the top 50 products to total sales made for that product (with/without filter).
 		 * 
 		 */
 		totalSalesPerProduct = product.getTotalSales(products); //OPTIMIZED
 
-		
 		request.setAttribute("row_values", states); //OK
 		request.setAttribute("col_values", products); //FIXED
 		request.setAttribute("cell_values", totalSalesPerState); //FIXED
 		request.setAttribute("totalSales", totalSales); //OK
 		request.setAttribute("totalSalesPerProduct", totalSalesPerProduct);  //FIXED
-	}
-	
-	public void updatePrecomputedTables(HttpServletRequest request, HttpServletResponse response) {
-
-		HttpSession session = request.getSession();
-		String filter = (String) session.getAttribute("filter");
-		HashMap <String,Integer> newTopKProducts = new HashMap<>();
-		List<String> noLongerTopKProducts = new ArrayList<>();
-		List<String> noLongerTopKStates = new ArrayList<>();
-		HashMap <String,Integer> updatedCellValues = new HashMap<>();
-		
-		if (filter.equals("allproducts")) {
-			
-			noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesTable();
-
-			PrecomputedTopStateSales.updateTopStateSalesTable(); //-- not necessary to return anything?
-		
-			updatedCellValues = PrecomputedStateTopK.updatePrecomputedStateTopK();  //Done.
-		}
-		else {
-			noLongerTopKProducts = PrecomputedTopProductSales.updateTopProductSalesFilteredTable();
-
-			
-			PrecomputedTopStateSales.updateTopStateSalesFilteredTable();
-			
-			updatedCellValues = PrecomputedStateTopK.updatePrecomputedStateTopKFiltered();			
-			
-		}
-		newTopKProducts = PrecomputedTopProductSales.getNewTop50Products();
-
 	}
 
     /**
@@ -200,8 +151,8 @@ public class SalesAnalyticsController extends HttpServlet {
 
         // Get products no longer in top 50.
         List<String> noLongerTopKProductsList = PrecomputedTopProductSales.updateTopProductSalesTable();
-        List<String> newTopKProductsList = PrecomputedTopProductSales.updateTopProductSalesTable();
-        Map<String, Integer> updatedTotalSalesMap = PrecomputedStateTopK.updatePrecomputedStateTopK();
+        Map<String, Double> newTopKProductsList = PrecomputedTopProductSales.getNewTop50Products();
+        Map<String, Double> updatedTotalSalesMap = PrecomputedStateTopK.updatePrecomputedStateTopK();
 
         // Convert lists & map to JSON string.
         Gson gson = new Gson();
