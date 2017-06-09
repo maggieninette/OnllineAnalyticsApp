@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PrecomputedStateTopK {
@@ -118,6 +119,8 @@ public class PrecomputedStateTopK {
 	 * @return
 	 */
 	
+	
+	
 	public static HashMap<String, Double> updatePrecomputedStateTopK(){
 		ResultSet rs = null;
 		ResultSet rc = null;
@@ -137,21 +140,26 @@ public class PrecomputedStateTopK {
 			
 			pstmt.executeUpdate();
 			stmt = conn.createStatement();
-			/*rs = stmt.executeQuery("SELECT * FROM state");
-			
-			
-			while (rs.next()) {
-				states.add(rs.getString("state_name"));
-			}
-			
-			newCellValues = StateDAO.getStateMappingAllProducts(states);*/
-			
-			pstmt = conn.prepareStatement(GET_SALE);
-			
-			rs = stmt.executeQuery("SELECT * FROM log ");
-			
 
+			
+			
+			
+			rs = stmt.executeQuery(	"SELECT DISTINCT state_name, product_name, sum(total) as total "+
+									"FROM log "+
+									"WHERE state_name IN "+
+										"(SELECT state_name "+
+									     "FROM top_state_sales "+
+									     "ORDER BY totalsale DESC "+
+									     "LIMIT 50) "+
+									"AND product_name IN "+
+										"(SELECT product_name "+
+									     "FROM old_top_50_products"+
+									     ") "+
+									"GROUP BY (state_name,product_name) " );	
+
+			//For everything in rs, execute the pstmt
 				while (rs.next()) {
+					pstmt = conn.prepareStatement(GET_SALE);
 					String state_name = rs.getString("state_name");
 				    String product_name = rs.getString("product_name");
 				    
@@ -159,12 +167,20 @@ public class PrecomputedStateTopK {
 				    pstmt.setString(2,product_name);
 				    
 				    rc = pstmt.executeQuery();
+				    rc.next();
 				    double newTotal = rc.getDouble(1);
+				    //Here we only want to put the cell values that are currently displayed in the table.
+
+				    System.out.println(state_name+product_name);
+				    pstmt.close();
 				    
-	
+    	
+				    	
 				    updatedCells.put(state_name+product_name,newTotal);	    
+				    
 					
 				}
+	
 			
 			conn.commit();
 			conn.setAutoCommit(true);
@@ -218,38 +234,60 @@ public class PrecomputedStateTopK {
 		ResultSet rc = null;
 		PreparedStatement pstmt = null;
 		Statement stmt = null;
-		//HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
-		//ArrayList<String> states = new ArrayList<>();
+
 		
 		HashMap<String,Double> updatedCells = new HashMap<>();
 		Connection conn = null;
 		
 		try {
 			conn = ConnectionManager.getConnection();
-			
 			conn.setAutoCommit(false);
+			
 			pstmt = conn.prepareStatement(UPDATE_CELL_VALUES_FILTERED);
 			
-			pstmt.executeQuery();
+			pstmt.executeUpdate();
+			stmt = conn.createStatement();
 
-			pstmt = conn.prepareStatement(GET_SALE_FILTERED);
-			rs = stmt.executeQuery("SELECT * FROM log");
 			
-			while (rs.next()) {
-				String state_name = rs.getString("state_name");
-			    String product_name = rs.getString("product_name");
-			    
-			    pstmt.setString(1, state_name);
-			    pstmt.setString(2,product_name);
-			    
-			    rc = pstmt.executeQuery();
-			    double newTotal = rc.getDouble(1);
-			    
-			    
-			    updatedCells.put(state_name+product_name,newTotal);	    
-				
-			}
 			
+			
+			rs = stmt.executeQuery(	"SELECT DISTINCT state_name, product_name, sum(total) as total "+
+									"FROM log "+
+									"WHERE state_name IN "+
+										"(SELECT state_name "+
+									     "FROM top_state_sales_filtered "+
+									     "ORDER BY totalsale DESC "+
+									     "LIMIT 50) "+
+									"AND product_name IN "+
+										"(SELECT product_name "+
+									     "FROM old_top_50_products_filtered"+
+									     ") "+
+									"GROUP BY (state_name,product_name) " );	
+
+			//For everything in rs, execute the pstmt
+				while (rs.next()) {
+					pstmt = conn.prepareStatement(GET_SALE_FILTERED);
+					String state_name = rs.getString("state_name");
+				    String product_name = rs.getString("product_name");
+				    
+				    pstmt.setString(1, state_name);
+				    pstmt.setString(2,product_name);
+				    
+				    rc = pstmt.executeQuery();
+				    rc.next();
+				    double newTotal = rc.getDouble(1);
+				    //Here we only want to put the cell values that are currently displayed in the table.
+
+				    System.out.println(state_name+product_name);
+				    pstmt.close();
+				    
+    	
+				    	
+				    updatedCells.put(state_name+product_name,newTotal);	    
+				    
+					
+				}
+	
 			
 			conn.commit();
 			conn.setAutoCommit(true);
