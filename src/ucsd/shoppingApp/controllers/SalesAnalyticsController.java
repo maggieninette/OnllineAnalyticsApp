@@ -151,24 +151,23 @@ public class SalesAnalyticsController extends HttpServlet {
 
         // Get products no longer in top 50.
         List<String> noLongerTopKProductsList = PrecomputedTopProductSales.updateTopProductSalesTable();
-        Map<String, Double> newTopKProductsList = PrecomputedTopProductSales.getNewTop50Products();
+        Map<String, Double> newTopKProductsMap = PrecomputedTopProductSales.getNewTop50Products();
         Map<String, Double> updatedTotalSalesMap = PrecomputedStateTopK.updatePrecomputedStateTopK();
 
         // Convert lists & map to JSON string.
         Gson gson = new Gson();
         String noLongerTopKProductsListAsString = gson.toJson(noLongerTopKProductsList);
-        String newTopKProductsListAsString = gson.toJson(newTopKProductsList);
+        String newTopKProductsMapAsString = gson.toJson(newTopKProductsMap);
         String updatedTotalSalesMapAsString = gson.toJson(updatedTotalSalesMap);
 
         // Create JSON object and fill with contents.
         JsonArray jsonResponse = new JsonArray();
         jsonResponse.add(noLongerTopKProductsListAsString);
-        jsonResponse.add(newTopKProductsListAsString);
+        jsonResponse.add(newTopKProductsMapAsString);
         jsonResponse.add(updatedTotalSalesMapAsString);
 
         // Get filled JSON object as string.
         String jsonResponseAsString = gson.toJson(jsonResponse);
-        System.out.println(jsonResponseAsString);
 
         // Send response as JSON.
         response.setContentType("application/json");
