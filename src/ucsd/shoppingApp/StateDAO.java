@@ -282,7 +282,7 @@ public class StateDAO {
 			
 			// Check if sales filter had been applied.
 			if (filter.equals("all_products")) {
-				rs = stmt.executeQuery("SELECT * FROM top_state_sales ORDER BY totalsale LIMIT 50 ");
+				rs = stmt.executeQuery("SELECT * FROM top_state_sales ORDER BY totalsale DESC LIMIT 50 ");
 				
 				while (rs.next()) {
 					statesTopKSorted.add(rs.getString("state_name"));
@@ -291,7 +291,7 @@ public class StateDAO {
 			else {
 				rs = stmt.executeQuery(STATES_SQL);
 				while (rs.next()) {
-					rs = stmt.executeQuery("SELECT * FROM top_state_sales_filtered ORDER BY totalsale LIMIT 50 ");
+					rs = stmt.executeQuery("SELECT * FROM top_state_sales_filtered ORDER BY totalsale DESC LIMIT 50 ");
 					
 					while (rs.next()) {
 						statesTopKSorted.add(rs.getString("state_name"));
