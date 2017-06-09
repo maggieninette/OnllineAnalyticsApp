@@ -9,9 +9,14 @@ function refreshTable() {
 
             $('#new-topk-products-outer').css('visibility', 'visible');
 
-            if (jQuery.hasData(response[1])) {
-                $('#new-topk-products-outer').html('<h3>The following products are now included in the top 50 products:</h3>')
+            if (response[1].length > 2) {
+                $('#new-topk-products-outer').html('<h3>The following products are now included in the top 50 products:</h3><div align="center" id="new-topk-products-inner"></div>');
             }
+            else {
+                $('#new-topk-products-outer').html('<h3>No new products are included in the top 50.</h3>');
+            }
+
+            console.log("length: " + response[1].length);
 
             var noLongerTopKProducts = $.parseJSON(response[0]);
             var newTopKProducts = $.parseJSON(response[1]);

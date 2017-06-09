@@ -22,7 +22,3 @@ CREATE INDEX precomputed_state_name_filtered_index on top_state_sales_filtered (
 CREATE INDEX precomputed_product_name_index on top_product_sales (product_name);
 CREATE INDEX precomputed_cellvalue_statename_index on precomputed_state_topk (state_name);
 CREATE INDEX precomputed_cellvalue_statename_filtered_index on precomputed_state_topk_filtered (product_name);
-
-
-
-

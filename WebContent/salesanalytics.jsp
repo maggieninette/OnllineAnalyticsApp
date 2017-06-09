@@ -63,7 +63,6 @@ DecimalFormat decimalFormat = new DecimalFormat("#,##0.00");
 		</form>
         <div align="center" id="new-topk-products-outer">
             <h3>No new products are included in the top 50.</h3>
-            <div align="center" id="new-topk-products-inner"></div>
         </div>
 		<table border="1">
 		<tr>
@@ -107,7 +106,6 @@ DecimalFormat decimalFormat = new DecimalFormat("#,##0.00");
                         user = user.replaceAll("\\s", "");
                         pageContext.setAttribute("cellId", user + temp);
 
-                        System.out.println(pageContext.getAttribute("cellId"));
 					    if (userSales.get(temp) != null) {
 						    sale = userSales.get(temp);
 					    }
