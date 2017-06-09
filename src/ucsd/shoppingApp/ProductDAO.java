@@ -546,9 +546,9 @@ public class ProductDAO {
      * Returns map of products and their total sales from all customers.
      * @return
      */
-	public HashMap<String,Integer> getTotalSales(List<String> products) {
+	public HashMap<String,Double> getTotalSales(List<String> products) {
 
-	    HashMap<String, Integer> totalSalesPerProduct = new HashMap<>();
+	    HashMap<String, Double> totalSalesPerProduct = new HashMap<>();
 		
 		ResultSet rs = null;
 		ResultSet rc= null;
@@ -568,7 +568,7 @@ public class ProductDAO {
 				rs = pt.executeQuery();
 				
 				rs.next();
-				totalSalesPerProduct.put(product_name, rs.getInt("totalsale"));
+				totalSalesPerProduct.put(product_name, rs.getDouble("totalsale"));
 				
 			}
 			
@@ -618,10 +618,10 @@ public class ProductDAO {
 			}
 			else { //A category filter was chosen.
 				pt = con.prepareStatement("SELECT * "+
-																		"FROM top_product_sales_filtered "+
-																		"WHERE category_name=? "+
-																		"ORDER BY totalsale DESC " +
-																		"LIMIT 50 ");
+											"FROM top_product_sales_filtered "+
+											"WHERE category_name=? "+
+											"ORDER BY totalsale DESC " +
+											"LIMIT 50 ");
 				pt.setString(1, filter);
 				rs = pt.executeQuery();
 				
