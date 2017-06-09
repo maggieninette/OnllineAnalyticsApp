@@ -1,45 +1,59 @@
 DROP TABLE IF EXISTS top_product_sales CASCADE;
+DROP TABLE IF EXISTS top_state_sales CASCADE;
+DROP TABLE IF EXISTS precomputed_state_topk CASCADE;
 DROP TABLE IF EXISTS new_top_50_products CASCADE;
 DROP TABLE IF EXISTS old_top_50_products CASCADE;
 
+DROP TABLE IF EXISTS top_product_sales_filtered CASCADE;
+DROP TABLE IF EXISTS top_state_sales_filtered CASCADE;
+DROP TABLE IF EXISTS precomputed_state_topk_filtered CASCADE;
+
+DROP TABLE IF EXISTS precomputed_state_product_values CASCADE;
+DROP TABLE IF EXISTS precomputed_top_50_states CASCADE;
+DROP TABLE IF EXISTS precomputed_top_50_products CASCADE;
+
 CREATE TABLE top_product_sales_filtered(
-  product_id BIGSERIAL,
+  product_id INTEGER,
   product_name TEXT,
   category_name TEXT,
-  totalsale BIGSERIAL
+  totalsale BIGINT
 );
+
 CREATE TABLE top_state_sales_filtered(
-  state_id BIGSERIAL,
+  state_id INTEGER,
   state_name TEXT,
   category_name TEXT,
-  totalsale BIGSERIAL
+  totalsale BIGINT
 );
 
 CREATE TABLE precomputed_state_topk_filtered(
   state_name TEXT,
   product_name TEXT,
-  total BIGSERIAL
+  total BIGINT
 );
 
 
+CREATE TABLE old_top_50_products (
+  product_id INTEGER,
+  product_name TEXT,
+  totalsale BIGINT
+    );
+
 
 CREATE TABLE new_top_50_products (
-  product_id BIGSERIAL,
+  product_id INTEGER,
   product_name TEXT,
-  totalsale BIGSERIAL
+  totalsale BIGINT
     );
 
-CREATE TABLE old_top_50_products (
-  product_id BIGSERIAL,
-  product_name TEXT,
-  totalsale BIGSERIAL
-    );
+
+
 
 
 CREATE TABLE top_product_sales(
-  product_id BIGSERIAL,
+  product_id INTEGER,
   product_name TEXT,
-  totalsale BIGSERIAL
+  totalsale BIGINT
 );
 
 INSERT INTO top_product_sales(
@@ -59,13 +73,18 @@ INSERT INTO top_product_sales(
       ON p.id = product_id
 );
 
+INSERT INTO new_top_50_products(
+     SELECT product_id,product_name, totalsale
+     FROM top_product_sales
+     ORDER BY totalsale DESC
+     LIMIT 50
+     );
 
-DROP TABLE IF EXISTS top_state_sales CASCADE;
 
 CREATE TABLE top_state_sales(
-  state_id BIGSERIAL,
+  state_id INTEGER,
   state_name TEXT,
-  totalsale BIGSERIAL
+  totalsale BIGINT
 );
 
 INSERT INTO top_state_sales(
@@ -85,12 +104,12 @@ INSERT INTO top_state_sales(
   ORDER BY total_sale desc
 );
 
-DROP TABLE IF EXISTS precomputed_state_topk CASCADE;
+
 
 CREATE TABLE precomputed_state_topk(
   state_name TEXT,
   product_name TEXT,
-  total BIGSERIAL
+  total BIGINT
 );
 
 INSERT INTO precomputed_state_topk(
@@ -111,3 +130,4 @@ INSERT INTO precomputed_state_topk(
     ON allproductsandstates.state_name = salesmade.state_name
     AND allproductsandstates.product_name = salesmade.product_name
 );
+

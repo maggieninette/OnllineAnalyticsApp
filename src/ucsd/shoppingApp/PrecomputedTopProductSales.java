@@ -251,8 +251,8 @@ public class PrecomputedTopProductSales {
 	 * @return The map of new products that made it into the top 50 and their total sales. 
 	 */
 	
-	public static HashMap <String, Integer> getNewTop50Products(){
-		HashMap <String, Integer> newTop50 = new HashMap<>();
+	public static HashMap <String, Double> getNewTop50Products(){
+		HashMap <String, Double> newTop50 = new HashMap<>();
 		
 		Statement stmt = null;
 		ResultSet rs = null;
@@ -270,7 +270,7 @@ public class PrecomputedTopProductSales {
 									"		FROM old_top_50_products )" );
 			
 			while (rs.next()) {
-				newTop50.put(rs.getString("product_name"), rs.getInt("totalsale"));
+				newTop50.put(rs.getString("product_name"), rs.getDouble("totalsale"));
 			}
 			
 			

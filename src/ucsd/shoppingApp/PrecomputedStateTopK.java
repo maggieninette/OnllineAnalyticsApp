@@ -118,7 +118,7 @@ public class PrecomputedStateTopK {
 	 * @return
 	 */
 	
-	public static HashMap<String, Integer> updatePrecomputedStateTopK(){
+	public static HashMap<String, Double> updatePrecomputedStateTopK(){
 		ResultSet rs = null;
 		ResultSet rc = null;
 		PreparedStatement pstmt = null;
@@ -126,7 +126,7 @@ public class PrecomputedStateTopK {
 		//HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
 		//ArrayList<String> states = new ArrayList<>();
 		
-		HashMap<String,Integer> updatedCells = new HashMap<>();
+		HashMap<String,Double> updatedCells = new HashMap<>();
 		Connection conn = null;
 		
 		try {
@@ -159,7 +159,7 @@ public class PrecomputedStateTopK {
 				    pstmt.setString(2,product_name);
 				    
 				    rc = pstmt.executeQuery();
-				    int newTotal = rc.getInt(1);
+				    double newTotal = rc.getDouble(1);
 				    
 	
 				    updatedCells.put(state_name+product_name,newTotal);	    
@@ -213,7 +213,7 @@ public class PrecomputedStateTopK {
 	 * @return returns the js ids mapped to the new values.
 	 */
 	
-	public static HashMap<String, Integer> updatePrecomputedStateTopKFiltered(){
+	public static HashMap<String, Double> updatePrecomputedStateTopKFiltered(){
 		ResultSet rs = null;
 		ResultSet rc = null;
 		PreparedStatement pstmt = null;
@@ -221,7 +221,7 @@ public class PrecomputedStateTopK {
 		//HashMap<String, Map <String,Integer>> newCellValues = new HashMap<>();
 		//ArrayList<String> states = new ArrayList<>();
 		
-		HashMap<String,Integer> updatedCells = new HashMap<>();
+		HashMap<String,Double> updatedCells = new HashMap<>();
 		Connection conn = null;
 		
 		try {
@@ -243,7 +243,7 @@ public class PrecomputedStateTopK {
 			    pstmt.setString(2,product_name);
 			    
 			    rc = pstmt.executeQuery();
-			    int newTotal = rc.getInt(1);
+			    double newTotal = rc.getDouble(1);
 			    
 			    
 			    updatedCells.put(state_name+product_name,newTotal);	    

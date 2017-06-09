@@ -9,7 +9,7 @@ CREATE TABLE log(
     product_id INTEGER REFERENCES product(id) NOT NULL,
     product_name TEXT,
     category_name TEXT,
-    total INTEGER
+    total BIGINT
 );
     
 
@@ -74,4 +74,4 @@ FOR EACH ROW
 EXECUTE PROCEDURE update_log_after_insert()
 ;
 
-   
+
