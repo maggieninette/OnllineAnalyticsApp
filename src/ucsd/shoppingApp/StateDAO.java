@@ -69,7 +69,7 @@ public class StateDAO {
 												"WHERE state_name=? "+
 												"AND product_name IN "+
 																"(SELECT product_name "+
-												                 "FROM new_top_50_products "+
+												                 "FROM new_top_50_products_filtered "+
 												                 "); ");
 				
 				String state_name = states.get(i);
@@ -79,6 +79,7 @@ public class StateDAO {
 				rs = pstmt.executeQuery();
 				
 				while (rs.next()){
+					System.out.println("here");
 					grandTotal.put(rs.getString("product_name"), rs.getDouble("total"));
 				}
 				
